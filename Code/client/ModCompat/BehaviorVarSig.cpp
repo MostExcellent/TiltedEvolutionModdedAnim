@@ -18,6 +18,9 @@
 
 //BehaviorVarSig* BehaviorVarSig::single = nullptr;
 
+//Credit to EDHO for original version of this code
+//I did the smart pointer refactoring, and changes to come
+
 BehaviorVarSig* BehaviorVarSig::Get() {
     static BehaviorVarSig instance;
     return &instance;
