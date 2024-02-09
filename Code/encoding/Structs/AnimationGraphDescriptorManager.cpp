@@ -16,6 +16,12 @@ const AnimationGraphDescriptor* AnimationGraphDescriptorManager::GetDescriptor(u
     return nullptr;
 }
 
+void AnimationGraphDescriptorManager::ReRegister(uint64_t aKey,
+                                                 AnimationGraphDescriptor aAnimationGraphDescriptor) noexcept
+{
+    m_descriptors[aKey] = std::move(aAnimationGraphDescriptor);
+}
+
 AnimationGraphDescriptorManager::Builder::Builder(AnimationGraphDescriptorManager& aManager, uint64_t aKey, AnimationGraphDescriptor aAnimationGraphDescriptor) noexcept
 {
     aManager.Register(aKey, std::move(aAnimationGraphDescriptor));

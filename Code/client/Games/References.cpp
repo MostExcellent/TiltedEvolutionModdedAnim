@@ -41,7 +41,6 @@
 
 // MOD: Behavior Sig
 #include <ModCompat/BehaviorVarSig.h>
-#include <ModCompat/MasterBehaviorVars.h>
 #include <mutex>
 
 std::mutex mutex_lock;
