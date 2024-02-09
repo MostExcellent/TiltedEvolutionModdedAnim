@@ -39,6 +39,13 @@
 #include <Services/DebugService.h>
 #include <World.h>
 
+// MOD: Behavior Sig
+#include <ModCompat/BehaviorVarSig.h>
+#include <ModCompat/MasterBehaviorVars.h>
+#include <mutex>
+
+std::mutex mutex_lock;
+
 #if TP_SKYRIM64
 #include <Combat/CombatController.h>
 #include <AI/AITimer.h>
@@ -218,6 +225,27 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
             }
 
             auto pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+            
+            if (!BehaviorVarSig::Get()->isAddPatched)
+            {
+                BehaviorVarSig::Get()->isAddPatched = true;
+                for (const auto& addPtr : BehaviorVarSig::Get()->addPool)
+                {
+                    spdlog::info("patching hash {}", addPtr->mHash);
+
+                    BehaviorVarSig::Get()->patchAdd(*addPtr); // Dereference addPtr here
+                }
+            }
+            if (!pDescriptor && BehaviorVarSig::Get()->failedSig.find(pExtendedActor->GraphDescriptorHash) ==
+                                    BehaviorVarSig::Get()->failedSig.end())
+            {
+                std::lock_guard guard(mutex_lock);
+                uint32_t hexFormID = pActor->formID;
+                spdlog::info("animation description not found for formid {:X} with hash {}", hexFormID,
+                             pExtendedActor->GraphDescriptorHash);
+                BehaviorVarSig::Get()->patch(pManager, pActor);
+                pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+            }
 
             if (!pDescriptor)
                 return;
