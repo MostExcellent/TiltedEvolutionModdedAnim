@@ -596,66 +596,35 @@ void BehaviorVarSig::patchAdd(BehaviorVarSig::Add& aAdd)
         return;
     }
 
-    std::map<uint32_t, bool> boolVar;
-    std::map<uint32_t, bool> floatVar;
-    std::map<uint32_t, bool> intVar;
+    TiltedPhoques::Vector<uint32_t> bVar, fVar, iVar;
 
+    // Directly store initial variables in vectors
     for (auto item : pGraph->BooleanLookUpTable)
     {
-        boolVar.emplace(item, true);
+        bVar.push_back(item);
     }
     for (auto item : pGraph->FloatLookupTable)
     {
-        floatVar.emplace(item, true);
+        fVar.push_back(item);
     }
     for (auto item : pGraph->IntegerLookupTable)
     {
-        intVar.emplace(item, true);
+        iVar.push_back(item);
     }
 
-    D("boolean var", aAdd.mHash);
-
-    for (const auto& item : aAdd.syncBooleanVar)
+    for (const auto& var : aAdd.syncBooleanVar)
     {
-
-        D("{}", item);
-
-        boolVar.emplace(item, true);
+        bVar.push_back(var);
     }
 
-    D("float var", aAdd.mHash);
-
-    for (const auto& item : aAdd.syncFloatVar)
+    for (const auto& var : aAdd.syncFloatVar)
     {
-        floatVar.emplace(item, true);
-        D("{}", item);
+        fVar.push_back(var);
     }
 
-    D("int var", aAdd.mHash);
-
-    for (const auto& item : aAdd.syncIntegerVar)
+    for (const auto& var : aAdd.syncIntegerVar)
     {
-
-        D("{}", item);
-
-        intVar.emplace(item, true);
-    }
-
-    TiltedPhoques::Vector<uint32_t> bVar;
-    TiltedPhoques::Vector<uint32_t> fVar;
-    TiltedPhoques::Vector<uint32_t> iVar;
-
-    for (const auto& item : boolVar)
-    {
-        bVar.push_back(item.first);
-    }
-    for (const auto& item : floatVar)
-    {
-        fVar.push_back(item.first);
-    }
-    for (const auto& item : intVar)
-    {
-        iVar.push_back(item.first);
+        iVar.push_back(var);
     }
 
     auto animGrapDescriptor = new AnimationGraphDescriptor({0}, {0}, {0});
