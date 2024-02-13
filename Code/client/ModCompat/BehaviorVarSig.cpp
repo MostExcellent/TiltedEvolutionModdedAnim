@@ -8,9 +8,7 @@
 #include <iostream>
 
 // debug
-#define BEHAVIOR_DEBUG 0
-
-#ifdef BEHAVIOR_DEBUG == 1
+#ifdef __config_releasedbg__
 #define D(...) spdlog::info(__VA_ARGS__)
 #else
 #define D(...)
