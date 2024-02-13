@@ -229,7 +229,7 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
             {
                 BehaviorVarSig::Get()->initialize();
             }
-
+            /*
             if (!BehaviorVarSig::Get()->isAddPatched)
             {
                 BehaviorVarSig::Get()->isAddPatched = true;
@@ -239,7 +239,7 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
 
                     BehaviorVarSig::Get()->patchAdd(*addPtr); // Dereference addPtr here
                 }
-            }
+            }*/
             if (!pDescriptor && BehaviorVarSig::Get()->failedSig.find(pExtendedActor->GraphDescriptorHash) ==
                                     BehaviorVarSig::Get()->failedSig.end())
             {
