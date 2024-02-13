@@ -24,22 +24,13 @@ struct BehaviorVarSig
     TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Sig>> sigPool;
     std::unordered_map<uint64_t, bool> failedSig;
 
-    // Add pool
-    TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Add>> addPool;
-    bool isAddPatched; //unused
-
     static BehaviorVarSig* Get();
     void initialize();
     bool initialized();
     void patch(BSAnimationGraphManager* apManager, Actor* apActor);
-    void patchAdd(Add& aAdd);
 
   private:
-    //static BehaviorVarSig* single;
     bool m_initialized = false;
     TiltedPhoques::UniquePtr<Sig> loadSigFromDir(const std::string aDir);
-    TiltedPhoques::UniquePtr<Add> loadAddFromDir(const std::string aDir);
-    //void tryAddtoHash(BehaviorVarSig::Add& aAdd);
     TiltedPhoques::Vector<std::string> loadDirs(const std::string& acPATH);
-    //void vanillaPatch();
 };

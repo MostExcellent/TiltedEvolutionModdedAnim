@@ -229,17 +229,7 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
             {
                 BehaviorVarSig::Get()->initialize();
             }
-            /*
-            if (!BehaviorVarSig::Get()->isAddPatched)
-            {
-                BehaviorVarSig::Get()->isAddPatched = true;
-                for (const auto& addPtr : BehaviorVarSig::Get()->addPool)
-                {
-                    spdlog::info("patching hash {}", addPtr->mHash);
-
-                    BehaviorVarSig::Get()->patchAdd(*addPtr); // Dereference addPtr here
-                }
-            }*/
+            // Maybe add a periodic check somewhere if real hash matches the hash in the descriptor
             if (!pDescriptor && BehaviorVarSig::Get()->failedSig.find(pExtendedActor->GraphDescriptorHash) ==
                                     BehaviorVarSig::Get()->failedSig.end())
             {
