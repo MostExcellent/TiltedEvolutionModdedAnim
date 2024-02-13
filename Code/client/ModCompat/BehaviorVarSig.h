@@ -12,14 +12,6 @@ struct BehaviorVarSig
         TiltedPhoques::Vector<std::string> syncIntegerVar;
     };
 
-    struct Add
-    {
-        std::uint64_t mHash;
-        TiltedPhoques::Vector<std::uint32_t> syncBooleanVar;
-        TiltedPhoques::Vector<std::uint32_t> syncFloatVar;
-        TiltedPhoques::Vector<std::uint32_t> syncIntegerVar;
-    };
-
     // Sig pool
     TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Sig>> sigPool;
     std::unordered_map<uint64_t, bool> failedSig;
