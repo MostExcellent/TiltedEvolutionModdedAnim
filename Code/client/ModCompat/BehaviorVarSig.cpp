@@ -19,7 +19,7 @@
 //BehaviorVarSig* BehaviorVarSig::single = nullptr;
 
 //Credit to EDHO for original version of this code
-//I did the smart pointer refactoring, and changes to come
+//I did the smart pointer refactoring, and changes after that
 
 BehaviorVarSig* BehaviorVarSig::Get() {
     static BehaviorVarSig instance;
@@ -60,6 +60,12 @@ void BehaviorVarSig::initialize()
             }
         }
     }
+    m_initialized = true;
+}
+
+bool BehaviorVarSig::initialized()
+{
+    return m_initialized;
 }
 
 void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)

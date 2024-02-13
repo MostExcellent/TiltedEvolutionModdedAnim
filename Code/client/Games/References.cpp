@@ -225,6 +225,11 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
 
             auto pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
             
+            if (!BehaviorVarSig::Get()->initialized())
+            {
+                BehaviorVarSig::Get()->initialize();
+            }
+
             if (!BehaviorVarSig::Get()->isAddPatched)
             {
                 BehaviorVarSig::Get()->isAddPatched = true;
