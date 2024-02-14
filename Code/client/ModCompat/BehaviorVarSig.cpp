@@ -14,8 +14,9 @@
 #define D(...)
 #endif
 
-//Credit to EDHO for original version of this code
-//I did the smart pointer refactoring, and changes after that
+//Credit to EDHO for original version of this code, also probably Speed and Raezroth to some extent
+//Honestly don't remember everything I did before initial commit of this fork
+//I did do the memory management refactor and changes after that, in addition to some other stuff
 
 BehaviorVarSig* BehaviorVarSig::Get() {
     static BehaviorVarSig instance;
