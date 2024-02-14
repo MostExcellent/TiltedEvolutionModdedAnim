@@ -35,13 +35,15 @@ bool isDirExist(std::string aPath)
 
 void BehaviorVarSig::initialize()
 {
+    // var files are stored in subdirectories of /behaviors
     const std::string PATH = TiltedPhoques::GetPath().string() + "/behaviors";
     if (!isDirExist(PATH))
         return;
 
     auto dirs = loadDirs(PATH);
     for (auto& item : dirs)
-    {
+    {   
+        // Load the sig from the directories
         auto sig = loadSigFromDir(item);
         if (sig)
         {
@@ -62,6 +64,9 @@ bool BehaviorVarSig::initialized()
 
 void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
 {
+    // Creates a new animation graph descriptor for the actor if the signature is satisfied
+    // This creates an appropriate descriptor even if modded vars are present (and are in patch files)
+
     // retrieve the formID of the Actor
     uint32_t hexFormID = apActor->formID;
 
@@ -166,9 +171,9 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
                 intVar.push_back(it->second);
             }
 
-            // Build a new animation graph descriptor with empty vectors for syncBoolVar, syncFloatVar, and
-            // syncIntegerVar
+            //Build a new animation graph descriptor with empty vectors
             AnimationGraphDescriptor newDescriptor = AnimationGraphDescriptor({0}, {0}, {0});
+            //Fill the vectors with the variable indices
             newDescriptor.BooleanLookUpTable = boolVar;
             newDescriptor.FloatLookupTable = floatVar;
             newDescriptor.IntegerLookupTable = intVar;
@@ -182,7 +187,7 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
         }
     }
 
-    D("sig for actor {:x} failed with hash {}", hexFormID, pExtendedActor->GraphDescriptorHash);
+    spdlog::warn("sig for actor {:x} failed with hash {}", hexFormID, pExtendedActor->GraphDescriptorHash);
 
     // Failed signature. Store in map to prevent future attempts.
     failedSig[pExtendedActor->GraphDescriptorHash] = true;

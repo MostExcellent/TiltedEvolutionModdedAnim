@@ -229,7 +229,8 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
             {
                 BehaviorVarSig::Get()->initialize();
             }
-            // Maybe add a periodic check somewhere if real hash matches the hash in the descriptor
+            // Maybe do creature compatibility by checking if vanilla hash when modded vars exist
+            // Also store modded hash for use where vanilla hash is currently used
             if (!pDescriptor && BehaviorVarSig::Get()->failedSig.find(pExtendedActor->GraphDescriptorHash) ==
                                     BehaviorVarSig::Get()->failedSig.end())
             {

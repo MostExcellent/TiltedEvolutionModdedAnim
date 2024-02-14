@@ -12,7 +12,7 @@ struct BehaviorVarSig
         TiltedPhoques::Vector<std::string> syncIntegerVar;
     };
 
-    // Sig pool
+    // To store sigs and failed sigs
     TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Sig>> sigPool;
     std::unordered_map<uint64_t, bool> failedSig;
 
