@@ -175,12 +175,8 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
                 intVar.push_back(it->second);
             }
 
-            //Build a new animation graph descriptor with empty vectors
-            AnimationGraphDescriptor newDescriptor = AnimationGraphDescriptor({0}, {0}, {0});
-            //Fill the vectors with the variable indices
-            newDescriptor.BooleanLookUpTable = boolVar;
-            newDescriptor.FloatLookupTable = floatVar;
-            newDescriptor.IntegerLookupTable = intVar;
+            //Build a new animation graph descriptor
+            AnimationGraphDescriptor newDescriptor = AnimationGraphDescriptor(boolVar, floatVar, intVar);
 
             // Add the brand new animation graph descriptor to AnimationGraphDescriptorManager() with the mHash key
             new AnimationGraphDescriptorManager::Builder(AnimationGraphDescriptorManager::Get(), mHash, newDescriptor);
