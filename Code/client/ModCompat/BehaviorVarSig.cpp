@@ -47,6 +47,9 @@ void BehaviorVarSig::initialize()
         auto sig = loadSigFromDir(item);
         if (sig)
         {
+            // If debug, print sig name
+            D("sig added: {}", sig->sigName);
+            // Add sig to the pool
             sigPool.push_back(std::move(sig));
         }
         else
