@@ -4,6 +4,8 @@
 #define NOMINMAX
 #endif
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <BranchInfo.h>
 
 #include <TiltedCore/Platform.hpp>
