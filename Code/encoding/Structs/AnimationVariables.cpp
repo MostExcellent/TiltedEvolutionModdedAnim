@@ -52,7 +52,6 @@ void AnimationVariables::Save(std::ostream& aOutput) const
     }
 
     aOutput.write(reinterpret_cast<const char*>(&integersSize), sizeof(size_t));
-    // Direct bulk write for integers and floats as before
     if (!Integers.empty())
     {
         aOutput.write(reinterpret_cast<const char*>(Integers.data()), integersSize * sizeof(uint32_t));
@@ -77,10 +76,11 @@ void AnimationVariables::GenerateDiff(const AnimationVariables& aPrevious, Tilte
     {
         bool previousState =
             i < aPrevious.Booleans.size() ? aPrevious.Booleans[i] : false; // Default to false if out of range
+        //Thanks GPT for fixing that lmao
         aWriter.WriteBits(Booleans[i] != previousState, 1);                // 1 bit for change flag
         if (Booleans[i] != previousState)
         {
-            aWriter.WriteBits(Booleans[i], 1); // Actual value if changed
+            aWriter.WriteBits(Booleans[i], 1);
         }
     }
 
@@ -89,10 +89,10 @@ void AnimationVariables::GenerateDiff(const AnimationVariables& aPrevious, Tilte
     {
         uint32_t previousValue =
             i < aPrevious.Integers.size() ? aPrevious.Integers[i] : 0; // Default to 0 if out of range
-        aWriter.WriteBits(Integers[i] != previousValue, 1);            // 1 bit for change flag
+        aWriter.WriteBits(Integers[i] != previousValue, 1);
         if (Integers[i] != previousValue)
         {
-            TiltedPhoques::Serialization::WriteVarInt(aWriter, Integers[i]); // Serialize the integer if changed
+            TiltedPhoques::Serialization::WriteVarInt(aWriter, Integers[i]);
         }
     }
 
@@ -102,10 +102,9 @@ void AnimationVariables::GenerateDiff(const AnimationVariables& aPrevious, Tilte
         float previousValue =
             i < aPrevious.Floats.size() ? aPrevious.Floats[i] : 0.0f; // Default to 0.0 if out of range
         bool hasChanged = Floats[i] != previousValue;
-        aWriter.WriteBits(hasChanged, 1); // 1 bit for change flag
+        aWriter.WriteBits(hasChanged, 1);
         if (hasChanged)
         {
-            // Serialize the floating-point number if changed
             uint32_t floatBits = *reinterpret_cast<const uint32_t*>(&Floats[i]);
             aWriter.WriteBits(floatBits, 32);
         }
