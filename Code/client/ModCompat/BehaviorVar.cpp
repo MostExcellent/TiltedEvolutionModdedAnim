@@ -179,6 +179,8 @@ const AnimationGraphDescriptor* BehaviorVar::Patch(BSAnimationGraphManager* apMa
 
     // Ensure we aren't over the limits. If we are, we won't update
     // No limits imposed here due to refactoring to use vector for bools
+
+    // REIMPLEMENT FAILLIST HERE
       
     // Reshape the (sorted, unique) sets to vectors
     TiltedPhoques::Vector<uint32_t> boolVector(boolVar.begin(), boolVar.end());
