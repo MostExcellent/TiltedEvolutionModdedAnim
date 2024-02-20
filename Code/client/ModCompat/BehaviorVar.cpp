@@ -178,24 +178,7 @@ const AnimationGraphDescriptor* BehaviorVar::Patch(BSAnimationGraphManager* apMa
         spdlog::info("Now have {} intVar descriptors after searching {} BehavivorVar strings", intVar.size(), iter->syncIntegerVar.size());
 
     // Ensure we aren't over the limits. If we are, we won't update
-    // the animation. Performance will be terrible unless we kill some of the logging
-    // or keep track of failed signatures.
-    std::string msgString;
-    if (boolVar.size() > 64)
-        msgString = "boolean";
-
-    else if ((floatVar.size() + intVar.size()) > 64)
-        msgString = "float+integer";
-
-    if (msgString.size() > 0)
-    {
-        spdlog::error("Too many {} behavior vars to sync for actor, max is 64.", msgString);
-        spdlog::error("Actor with formID {:x}, signature {}, original hash {} cannot be synced", 
-                      hexFormID, iter->orgHash, iter->signatureVar);
-        spdlog::error("Fail listing behavior hash {:x} found on formID {:x}", hash, hexFormID);
-        failList(hash);
-        return nullptr;
-    }
+    // No limits imposed here due to refactoring to use vector for bools
       
     // Reshape the (sorted, unique) sets to vectors
     TiltedPhoques::Vector<uint32_t> boolVector(boolVar.begin(), boolVar.end());

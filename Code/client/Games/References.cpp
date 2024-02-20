@@ -239,8 +239,7 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
             if (!pVariableSet)
                 return;
 
-            aVariables.Booleans = 0;
-
+            aVariables.Booleans.resize(pDescriptor->BooleanLookUpTable.size());
             aVariables.Floats.resize(pDescriptor->FloatLookupTable.size());
             aVariables.Integers.resize(pDescriptor->IntegerLookupTable.size());
 
@@ -263,14 +262,13 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
                         continue;
 
                     if (pFirstPersonVariables->data[*firstPersonIdx] != 0)
-                        aVariables.Booleans |= (1ull << i);
+                        aVariables.Booleans[i] = pFirstPersonVariables->data[firstPersonIdx.value()];
 
                     continue;
                 }
 #endif
 
-                if (pVariableSet->data[idx] != 0)
-                    aVariables.Booleans |= (1ull << i);
+                aVariables.Booleans[i] = pVariableSet->data[idx] != 0;
             }
 
             for (size_t i = 0; i < pDescriptor->FloatLookupTable.size(); ++i)
@@ -379,7 +377,7 @@ void TESObjectREFR::LoadAnimationVariables(const AnimationVariables& aVariables)
 
                 if (pVariableSet->size > idx)
                 {
-                    pVariableSet->data[idx] = (aVariables.Booleans & (1ull << i)) != 0;
+                    pVariableSet->data[idx] = aVariables.Booleans[i];
                 }
             }
 

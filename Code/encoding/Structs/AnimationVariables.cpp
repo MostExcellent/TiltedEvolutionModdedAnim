@@ -14,139 +14,150 @@ bool AnimationVariables::operator!=(const AnimationVariables& acRhs) const noexc
 
 void AnimationVariables::Load(std::istream& aInput)
 {
-    aInput.read(reinterpret_cast<char*>(&Booleans), sizeof(Booleans));
+    size_t booleansSize, integersSize, floatsSize;
+    aInput.read(reinterpret_cast<char*>(&booleansSize), sizeof(size_t));
+    Booleans.resize(booleansSize);
+
+    for (size_t i = 0; i < booleansSize; ++i)
+    {
+        char value;
+        aInput.read(&value, sizeof(char));
+        Booleans[i] = (value != 0);
+    }
+
+    aInput.read(reinterpret_cast<char*>(&integersSize), sizeof(size_t));
+    Integers.resize(integersSize);
     aInput.read(reinterpret_cast<char*>(Integers.data()), Integers.size() * sizeof(uint32_t));
+
+    aInput.read(reinterpret_cast<char*>(&floatsSize), sizeof(size_t));
+    Floats.resize(floatsSize);
     aInput.read(reinterpret_cast<char*>(Floats.data()), Floats.size() * sizeof(float));
 }
 
+
+
 void AnimationVariables::Save(std::ostream& aOutput) const
 {
-    aOutput.write(reinterpret_cast<const char*>(&Booleans), sizeof(Booleans));
-    aOutput.write(reinterpret_cast<const char*>(Integers.data()), Integers.size() * sizeof(uint32_t));
-    aOutput.write(reinterpret_cast<const char*>(Floats.data()), Floats.size() * sizeof(float));
+    // First, write the size of each vector to know how many elements to read on load
+    size_t booleansSize = Booleans.size();
+    size_t integersSize = Integers.size();
+    size_t floatsSize = Floats.size();
+
+    aOutput.write(reinterpret_cast<const char*>(&booleansSize), sizeof(size_t));
+    // Since std::vector<bool> is a special case, serialize its content as individual bytes
+    for (bool boolean : Booleans)
+    {
+        char value = boolean ? 1 : 0; // Convert boolean to a byte
+        aOutput.write(&value, sizeof(char));
+    }
+
+    aOutput.write(reinterpret_cast<const char*>(&integersSize), sizeof(size_t));
+    // Direct bulk write for integers and floats as before
+    if (!Integers.empty())
+    {
+        aOutput.write(reinterpret_cast<const char*>(Integers.data()), integersSize * sizeof(uint32_t));
+    }
+
+    aOutput.write(reinterpret_cast<const char*>(&floatsSize), sizeof(size_t));
+    if (!Floats.empty())
+    {
+        aOutput.write(reinterpret_cast<const char*>(Floats.data()), floatsSize * sizeof(float));
+    }
 }
 
 void AnimationVariables::GenerateDiff(const AnimationVariables& aPrevious, TiltedPhoques::Buffer::Writer& aWriter) const
 {
-    uint64_t changes = 0;
-    uint32_t idx = 0;
-
-    if (Booleans != aPrevious.Booleans)
-    {
-        changes |= (1ull << idx);
-    }
-    ++idx;
-
-    auto integers = aPrevious.Integers;
-    if (integers.empty())
-        integers.assign(Integers.size(), 0);
-
-    for (auto i = 0u; i < Integers.size(); ++i)
-    {
-        if (Integers[i] != integers[i])
-        {
-            changes |= (1ull << idx);
-        }
-        ++idx;
-    }
-
-    auto floats = aPrevious.Floats;
-    if (floats.empty())
-        floats.assign(Floats.size(), 0.f);
-
-    for (auto i = 0u; i < Floats.size(); ++i)
-    {
-        if (Floats[i] != floats[i])
-        {
-            changes |= (1ull << idx);
-        }
-        ++idx;
-    }
-
+    // Serialize sizes of vectors to know how many elements to expect during deserialization
+    TiltedPhoques::Serialization::WriteVarInt(aWriter, Booleans.size());
     TiltedPhoques::Serialization::WriteVarInt(aWriter, Integers.size());
     TiltedPhoques::Serialization::WriteVarInt(aWriter, Floats.size());
 
-    const auto cDiffBitCount = 1 + Integers.size() + Floats.size();
-
-    aWriter.WriteBits(changes, cDiffBitCount);
-
-    idx = 0;
-    if (changes & (1ull << idx))
+    // Booleans
+    for (size_t i = 0; i < Booleans.size(); ++i)
     {
-        aWriter.WriteBits(Booleans, 64);
-    }
-    ++idx;
-
-    for (const auto value : Integers)
-    {
-        if (changes & (1ull << idx))
+        bool previousState =
+            i < aPrevious.Booleans.size() ? aPrevious.Booleans[i] : false; // Default to false if out of range
+        aWriter.WriteBits(Booleans[i] != previousState, 1);                // 1 bit for change flag
+        if (Booleans[i] != previousState)
         {
-            TiltedPhoques::Serialization::WriteVarInt(aWriter, value & 0xFFFFFFFF);
+            aWriter.WriteBits(Booleans[i], 1); // Actual value if changed
         }
-        ++idx;
     }
 
-    for (const auto value : Floats)
+    // Integers
+    for (size_t i = 0; i < Integers.size(); ++i)
     {
-        if (changes & (1ull << idx))
+        uint32_t previousValue =
+            i < aPrevious.Integers.size() ? aPrevious.Integers[i] : 0; // Default to 0 if out of range
+        aWriter.WriteBits(Integers[i] != previousValue, 1);            // 1 bit for change flag
+        if (Integers[i] != previousValue)
         {
-            aWriter.WriteBits(*reinterpret_cast<const uint32_t*>(&value), 32);
+            TiltedPhoques::Serialization::WriteVarInt(aWriter, Integers[i]); // Serialize the integer if changed
         }
-        ++idx;
+    }
+
+    // Floats
+    for (size_t i = 0; i < Floats.size(); ++i)
+    {
+        float previousValue =
+            i < aPrevious.Floats.size() ? aPrevious.Floats[i] : 0.0f; // Default to 0.0 if out of range
+        bool hasChanged = Floats[i] != previousValue;
+        aWriter.WriteBits(hasChanged, 1); // 1 bit for change flag
+        if (hasChanged)
+        {
+            // Serialize the floating-point number if changed
+            uint32_t floatBits = *reinterpret_cast<const uint32_t*>(&Floats[i]);
+            aWriter.WriteBits(floatBits, 32);
+        }
     }
 }
 
 void AnimationVariables::ApplyDiff(TiltedPhoques::Buffer::Reader& aReader)
 {
-    const auto cIntegersSize = TiltedPhoques::Serialization::ReadVarInt(aReader);
-    if (cIntegersSize > 0xFF)
-        throw std::runtime_error("Too many integers received !");
+    const auto cBooleansSize = TiltedPhoques::Serialization::ReadVarInt(aReader);
+    Booleans.resize(cBooleansSize);
 
-    if (Integers.size() != cIntegersSize)
-    {
-        Integers.assign(cIntegersSize, 0);
-    }
+    const auto cIntegersSize = TiltedPhoques::Serialization::ReadVarInt(aReader);
+    Integers.resize(cIntegersSize);
 
     const auto cFloatsSize = TiltedPhoques::Serialization::ReadVarInt(aReader);
-    if (cFloatsSize > 0xFF)
-        throw std::runtime_error("Too many floats received !");
+    Floats.resize(cFloatsSize);
 
-    if (Floats.size() != cFloatsSize)
+    // Booleans
+    for (size_t i = 0; i < cBooleansSize; ++i)
     {
-        Floats.assign(cFloatsSize, 0.f);
+        uint64_t changeFlag = 0;
+        aReader.ReadBits(changeFlag, 1);
+        if (changeFlag)
+        {
+            uint64_t bitValue = 0;
+            aReader.ReadBits(bitValue, 1);
+            Booleans[i] = (bitValue != 0);
+        }
     }
 
-    const auto cDiffBitCount = 1 + Integers.size() + Floats.size();
-
-    uint64_t changes = 0;
-    uint32_t idx = 0;
-
-    aReader.ReadBits(changes, cDiffBitCount);
-
-    if (changes & (1ull << idx))
-    {
-        aReader.ReadBits(Booleans, 64);
-    }
-    ++idx;
-
+    // Integers
     for (auto& value : Integers)
     {
-        if (changes & (1ull << idx))
+        uint64_t changeFlag = 0;
+        aReader.ReadBits(changeFlag, 1);
+        if (changeFlag)
         {
-            value = TiltedPhoques::Serialization::ReadVarInt(aReader) & 0xFFFFFFFF;
+            value = TiltedPhoques::Serialization::ReadVarInt(aReader);
         }
-        ++idx;
     }
 
+    // Floats
     for (auto& value : Floats)
     {
-        if (changes & (1ull << idx))
+        uint64_t changeFlag = 0;
+        aReader.ReadBits(changeFlag, 1);
+        if (changeFlag)
         {
             uint64_t tmp = 0;
             aReader.ReadBits(tmp, 32);
             uint32_t data = tmp & 0xFFFFFFFF;
             value = *reinterpret_cast<float*>(&data);
         }
-        ++idx;
     }
 }

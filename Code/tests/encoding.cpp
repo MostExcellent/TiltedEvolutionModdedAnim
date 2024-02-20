@@ -276,7 +276,13 @@ TEST_CASE("Differential structures", "[encoding.differential]")
     GIVEN("AnimationVariables")
     {
         AnimationVariables vars, recvVars;
-        vars.Booleans = 0x12345678ull;
+        vars.Booleans.push_back(false);
+        vars.Booleans.push_back(true);
+        vars.Booleans.push_back(false);
+        vars.Booleans.push_back(false);
+        vars.Booleans.push_back(true);
+        vars.Booleans.push_back(true);
+
         vars.Floats.push_back(1.f);
         vars.Floats.push_back(7.f);
         vars.Floats.push_back(12.f);
@@ -305,7 +311,7 @@ TEST_CASE("Differential structures", "[encoding.differential]")
             REQUIRE(vars.Integers == recvVars.Integers);
         }
 
-        vars.Booleans = 0x9456123ull;
+        vars.Booleans[0] = true;
         vars.Floats[3] = 42.f;
         vars.Integers[0] = 18;
         vars.Integers[3] = 0;
@@ -444,7 +450,13 @@ TEST_CASE("Packets", "[encoding.packets]")
         auto& move = update.UpdatedMovement;
 
         AnimationVariables vars;
-        vars.Booleans = 0x12345678ull;
+        vars.Booleans.push_back(false);
+        vars.Booleans.push_back(true);
+        vars.Booleans.push_back(false);
+        vars.Booleans.push_back(false);
+        vars.Booleans.push_back(true);
+        vars.Booleans.push_back(true);
+
         vars.Floats.push_back(1.f);
         vars.Floats.push_back(7.f);
         vars.Floats.push_back(12.f);
