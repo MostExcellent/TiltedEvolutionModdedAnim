@@ -47,5 +47,10 @@ struct BehaviorVar
 
 extern const AnimationGraphDescriptor* BehaviorVarPatch(BSAnimationGraphManager* apManager, Actor* apActor);
 
+//namespace BehaviorVarUtils
+//{
+//void ProcessVariableSet(const std::map<const std::string, const uint32_t>& reversemap, std::set<uint32_t>& variableSet,
+//                        const std::vector<std::string>& variables, const bool lowerFallback, const uint8 logLevel);
+//}
 
 #endif MODDED_BEHAVIOR_COMPATIBILITY

@@ -33,6 +33,8 @@
 #include <Camera/PlayerCamera.h>
 #endif
 
+//#include <functional>
+
 #include <mutex>
 std::mutex mutex_lock;
 
@@ -56,6 +58,119 @@ const AnimationGraphDescriptor* BehaviorVarPatch(BSAnimationGraphManager* apMana
     return BehaviorVar::Get()->Patch(apManager, apActor);
 }
 
+// A note on some of the following changes relative to rfortier's code:
+// Yes, it's probably overkill, but it was a bit of an exercise for me
+
+// Utility function to convert a string to lowercase
+// This is useful as at least one vanilla variable, "Speed", is sometimes lowercase
+// We'd like to be able to handle other vars for which this may be the case.
+std::string toLowerCase(const std::string& str)
+{
+    std::string lowerCaseStr = str;
+    std::transform(lowerCaseStr.begin(), lowerCaseStr.end(), lowerCaseStr.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return lowerCaseStr;
+}
+
+// Converts the keys of a map (which are const std::string) to lowercase.
+// This is our "Plan C" if a vanilla var isn't found to make sure it isn't just a case-sensitivity issue.
+template <typename T> std::map<const std::string, T> toLowerCaseKeys(const std::map<const std::string, T>& map)
+{
+    std::map<std::string, T> lowerCaseMap;
+    for (const auto& item : map)
+        lowerCaseMap.insert({toLowerCase(item.first), item.second});
+    return lowerCaseMap;
+}
+
+// We can forward a message to spdlog with the desired log level so we can reuse processVariableSet
+enum class LogLevel
+{
+    Info,
+    Warn,
+    Error
+};
+
+template <typename... Args> void logMessage(LogLevel logLevel, const char* const format, Args&&... args)
+{
+    switch (logLevel)
+    {
+    case LogLevel::Info:
+        spdlog::info(format, std::forward<Args>(args)...);
+        break;
+    case LogLevel::Warn:
+        spdlog::warn(format, std::forward<Args>(args)...);
+        break;
+    case LogLevel::Error:
+        spdlog::error(format, std::forward<Args>(args)...);
+        break;
+    default:
+        throw std::invalid_argument("Unknown log level");
+    }
+}
+
+// Governs how to handle case sensitivity in the event of a variable not being found
+// Vanilla vars should 100% be found, so we triple check.
+// Replacer patches are expected to be correctly cased so we just move on if not found.
+enum class CaseFallback
+{
+    None,
+    Var, // Here for completeness, but imo no reason not to triple-check vanilla vars if not found
+    VarAndMap
+};
+
+// Process a set of variables, adding them to the variableSet
+void processVariableSet(const std::map<const std::string, const uint32_t>& reversemap, std::set<uint32_t>& variableSet,
+                        const std::vector<std::string>& variables, const CaseFallback fallbackLevel, LogLevel logLevel)
+{
+    // Not filled until needed, which should be never.
+    std::map<const std::string, const uint32_t> lowerCaseMap;
+
+    for (const auto& item : variables)
+    {
+        auto found = reversemap.find(item);
+        if (found != reversemap.end())
+        {
+
+            variableSet.insert(found->second);
+        }
+        else if (fallbackLevel == CaseFallback::Var || fallbackLevel == CaseFallback::VarAndMap)
+        {
+            logMessage(logLevel, "Unable to find variable {}, trying lowercase...", item);
+            auto foundLower = reversemap.find(toLowerCase(item));
+            if (foundLower != reversemap.end())
+            {
+                variableSet.insert(foundLower->second);
+                spdlog::warn("Compensated for incorrect capitalization of variable '{}'", item);
+            }
+            else if (fallbackLevel == CaseFallback::VarAndMap)
+            {
+                logMessage(logLevel,
+                            "Still unable to find variable {} (lowercase), trying case-insensitive search...", item);
+                if (lowerCaseMap.empty())
+                    lowerCaseMap = toLowerCaseKeys(reversemap);
+                auto foundLowerMap = lowerCaseMap.find(toLowerCase(item));
+                if (foundLowerMap != lowerCaseMap.end())
+                {
+                    variableSet.insert(foundLowerMap->second);
+                    spdlog::warn("Compensated for incorrect capitalization of variable '{}' with case-insensitive search", item);
+                }
+                else
+                {
+                    logMessage(logLevel, "Unable to find variable {} with case-insensitive search", item);
+                }
+            }
+            else
+            {
+                logMessage(logLevel, "Unable to find variable {} (lowercase)", item);
+            }
+        }
+        else
+        {
+            logMessage(logLevel, "Unable to find variable {}", item);
+        }
+    }
+}
+
 //
 // Translate modded behavior numeric values.
 // When a behavior is modified (at least by Nemesis) it can rearrange the order of BehaviorVars.
@@ -65,54 +180,44 @@ const AnimationGraphDescriptor* BehaviorVarPatch(BSAnimationGraphManager* apMana
 // can forward-translate the string to its new numeric value.
 // 
 // The machine-generated table hack to do this can be removed with STR-devs'
-// permission to also embed the string invformation in the Code\encoding\structs files.
+// permission to also embed the string information in the Code\encoding\structs files.
 //
-void BehaviorVar::seedAnimationVariables(
-    uint64_t hash, 
-    const AnimationGraphDescriptor* pDescriptor,
-    std::map<const std::string, const uint32_t>& reversemap,
-    std::set<uint32_t>& boolVars, 
-    std::set<uint32_t>& floatVars,
-    std::set<uint32_t>& intVars)
+void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDescriptor* pDescriptor,
+                                         std::map<const std::string, const uint32_t>& reversemap,
+                                         std::set<uint32_t>& boolVars, std::set<uint32_t>& floatVars,
+                                         std::set<uint32_t>& intVars)
 {
     auto& origVars = BehaviorVarsMap::getInstance();
 
-    // Defensive code to detect if for some reason we have a number 
-    // without a string, or a string without a number.
+    // Prepare lists of variables to process
+    std::vector<std::string> boolVarNames;
+    std::vector<std::string> floatVarNames;
+    std::vector<std::string> intVarNames;
+
+    // Populate lists from the original descriptor
     for (auto& item : pDescriptor->BooleanLookUpTable)
     {
         auto strValue = origVars.find(hash, item);
-        if (strValue.empty())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original BooleanVar {}", item);
-        else if (reversemap.find(strValue) == reversemap.end())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find BooleanVar {}", strValue);
-        else
-            boolVars.insert(reversemap[strValue]);
+        if (!strValue.empty())
+            boolVarNames.push_back(strValue);
     }
     for (auto& item : pDescriptor->FloatLookupTable)
     {
         auto strValue = origVars.find(hash, item);
-        if (strValue.empty())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original FloatVar {}", item);
-        else if (reversemap.find(strValue) == reversemap.end())
-            if (strValue == "Speed" && reversemap.find("speed") != reversemap.end())    // Fix typo in base game.
-                strValue = "speed", spdlog::error("BehaviorVar::seedAnimationVariables successfully compensated for incorrect capitalization of Floatvar 'speed'");
-
-        if (reversemap.find(strValue) == reversemap.end())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find FloatVar {}", strValue); 
-        else
-            floatVars.insert(reversemap[strValue]);
+        if (!strValue.empty())
+            floatVarNames.push_back(strValue);
     }
     for (auto& item : pDescriptor->IntegerLookupTable)
     {
         auto strValue = origVars.find(hash, item);
-        if (strValue.empty())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original IntegerVar {}", item);
-        else if (reversemap.find(strValue) == reversemap.end())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find IntegerVar {}", strValue);
-        else
-            intVars.insert(reversemap[strValue]);
+        if (!strValue.empty())
+            intVarNames.push_back(strValue);
     }
+
+    // Process each set of variables
+    processVariableSet(reversemap, boolVars, boolVarNames, CaseFallback::VarAndMap, LogLevel::Error);
+    processVariableSet(reversemap, floatVars, floatVarNames, CaseFallback::VarAndMap, LogLevel::Error);
+    processVariableSet(reversemap, intVars, intVarNames, CaseFallback::VarAndMap, LogLevel::Error);
 }
 
 const std::vector<std::string> BehaviorVar::tokenizeBehaviorSig(const std::string signature) const
