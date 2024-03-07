@@ -4,6 +4,8 @@
 #define NOMINMAX
 #endif
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <TiltedCore/Platform.hpp>
 
 #if defined(TP_SKYRIM) && TP_PLATFORM_64
