@@ -60,6 +60,7 @@ const AnimationGraphDescriptor* BehaviorVarPatch(BSAnimationGraphManager* apMana
 
 // A note on some of the following changes relative to rfortier's code:
 // Yes, it's probably overkill, but it was a bit of an exercise for me
+// Reverted a bunch of mistakes that I shouldn't have committed/pushed.
 
 // Utility function to convert a string to lowercase
 // This is useful as at least one vanilla variable, "Speed", is sometimes lowercase
@@ -72,40 +73,12 @@ std::string toLowerCase(const std::string& str)
     return lowerCaseStr;
 }
 
-// Converts the keys of a map (which are const std::string) to lowercase.
-// This is our "Plan C" if a vanilla var isn't found to make sure it isn't just a case-sensitivity issue.
-template <typename T> std::map<const std::string, T> toLowerCaseKeys(const std::map<const std::string, T>& map)
+// Converts the keys of our map to lowercase.
+// This is for our "Plan C" if a vanilla var isn't found to make sure it isn't just a case-sensitivity issue.
+void lowerCaseKeys(const std::map<const std::string, const uint32_t>& map, std::map<const std::string, const uint32_t>& lowerCaseMap)
 {
-    std::map<std::string, T> lowerCaseMap;
     for (const auto& item : map)
         lowerCaseMap.insert({toLowerCase(item.first), item.second});
-    return lowerCaseMap;
-}
-
-// We can forward a message to spdlog with the desired log level so we can reuse processVariableSet
-enum class LogLevel
-{
-    Info,
-    Warn,
-    Error
-};
-
-template <typename... Args> void logMessage(LogLevel logLevel, const char* const format, Args&&... args)
-{
-    switch (logLevel)
-    {
-    case LogLevel::Info:
-        spdlog::info(format, std::forward<Args>(args)...);
-        break;
-    case LogLevel::Warn:
-        spdlog::warn(format, std::forward<Args>(args)...);
-        break;
-    case LogLevel::Error:
-        spdlog::error(format, std::forward<Args>(args)...);
-        break;
-    default:
-        throw std::invalid_argument("Unknown log level");
-    }
 }
 
 // Governs how to handle case sensitivity in the event of a variable not being found
@@ -120,7 +93,7 @@ enum class CaseFallback
 
 // Process a set of variables, adding them to the variableSet
 void processVariableSet(const std::map<const std::string, const uint32_t>& reversemap, std::set<uint32_t>& variableSet,
-                        const std::vector<std::string>& variables, const CaseFallback fallbackLevel, LogLevel logLevel)
+                        const std::vector<std::string>& variables, const CaseFallback fallbackLevel)
 {
     // Not filled until needed, which should be never.
     std::map<const std::string, const uint32_t> lowerCaseMap;
@@ -135,7 +108,7 @@ void processVariableSet(const std::map<const std::string, const uint32_t>& rever
         }
         else if (fallbackLevel == CaseFallback::Var || fallbackLevel == CaseFallback::VarAndMap)
         {
-            logMessage(logLevel, "Unable to find variable {}, trying lowercase...", item);
+            spdlog::error("Unable to find variable {}, trying lowercase...", item);
             auto foundLower = reversemap.find(toLowerCase(item));
             if (foundLower != reversemap.end())
             {
@@ -144,10 +117,9 @@ void processVariableSet(const std::map<const std::string, const uint32_t>& rever
             }
             else if (fallbackLevel == CaseFallback::VarAndMap)
             {
-                logMessage(logLevel,
-                            "Still unable to find variable {} (lowercase), trying case-insensitive search...", item);
+                spdlog::error("Still unable to find variable {} (lowercase), trying case-insensitive search...", item);
                 if (lowerCaseMap.empty())
-                    lowerCaseMap = toLowerCaseKeys(reversemap);
+                    lowerCaseKeys(reversemap, lowerCaseMap);
                 auto foundLowerMap = lowerCaseMap.find(toLowerCase(item));
                 if (foundLowerMap != lowerCaseMap.end())
                 {
@@ -156,18 +128,18 @@ void processVariableSet(const std::map<const std::string, const uint32_t>& rever
                 }
                 else
                 {
-                    logMessage(logLevel, "Unable to find variable {} with case-insensitive search", item);
+                    spdlog::error("Unable to find variable {} with case-insensitive search", item);
                 }
             }
             else
             {
-                logMessage(logLevel, "Unable to find variable {} (lowercase)", item);
+                spdlog::error("Unable to find variable {} (lowercase)", item);
             }
         }
-        else
-        {
-            logMessage(logLevel, "Unable to find variable {}", item);
-        }
+        //else
+        //{
+        //    //Log it?
+        //}
     }
 }
 
@@ -215,9 +187,9 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
     }
 
     // Process each set of variables
-    processVariableSet(reversemap, boolVars, boolVarNames, CaseFallback::VarAndMap, LogLevel::Error);
-    processVariableSet(reversemap, floatVars, floatVarNames, CaseFallback::VarAndMap, LogLevel::Error);
-    processVariableSet(reversemap, intVars, intVarNames, CaseFallback::VarAndMap, LogLevel::Error);
+    processVariableSet(reversemap, boolVars, boolVarNames, CaseFallback::VarAndMap);
+    processVariableSet(reversemap, floatVars, floatVarNames, CaseFallback::VarAndMap);
+    processVariableSet(reversemap, intVars, intVarNames, CaseFallback::VarAndMap);
 }
 
 const std::vector<std::string> BehaviorVar::tokenizeBehaviorSig(const std::string signature) const
