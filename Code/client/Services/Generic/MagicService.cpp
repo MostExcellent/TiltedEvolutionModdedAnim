@@ -520,3 +520,26 @@ void MagicService::UpdateRevealOtherPlayersEffect() noexcept
     }
 #endif
 }
+
+#if TP_SKYRIM64
+void MagicService::OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexcept
+{
+    Actor* pActor = Utils::GetByServerId<Actor>(acMessage.TargetId);
+    if (!pActor)
+    {
+        spdlog::warn("MagicService::OnNotifyRemoveSpell: could not find actor server id {:X}", acMessage.TargetId);
+        return;
+    }
+    // Get formID from GameID of the spell
+    const uint32_t cSpellId = World::Get().GetModSystem().GetGameId(acMessage.SpellId);
+    // Get the magic item from the formID
+    MagicItem* pSpell = Cast<MagicItem>(TESForm::GetById(cSpellId));
+    if (!pSpell)
+    {
+        spdlog::error("MagicService::OnNotifyRemoveSpell: Failed to retrieve spell by id {:X}", cSpellId);
+        return;
+    }
+    // Remove the spell from the actor
+    pActor->RemoveSpell(pSpell);
+}
+#endif

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TESObjectREFR.h>
+#include <server/Game/Player.h>
 
 template <class T> struct BSTEventSink;
 
@@ -267,6 +268,13 @@ struct TESFastTravelEndEvent
 {
 };
 
+//struct TESSpellRemovalEvent
+//{
+//    //includes player and spell formid
+//    Player* player;
+//    uint32_t spellFormId;
+//};
+
 struct EventDispatcherManager
 {
     static EventDispatcherManager* Get() noexcept;
@@ -325,6 +333,7 @@ struct EventDispatcherManager
     EventDispatcher<UnknownEvent> unknownDispatcher51; // TESWaitStopEvent
     EventDispatcher<TESSwitchRaceCompleteEvent> switchRaceCompleteEvent;
     EventDispatcher<TESFastTravelEndEvent> fastTravelEndEvent;
+    //EventDispatcher<TESSpellRemovalEvent> spellRemovalEvent;
 };
 
 // constexpr auto x = offsetof(EventDispatcherManager, unkx);

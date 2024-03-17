@@ -39,6 +39,7 @@
 #include <Messages/NotifySubtitle.h>
 #include <Messages/NotifyActorTeleport.h>
 #include <Messages/NotifyRelinquishControl.h>
+#include <Messages/NotifyRemoveSpell.h>
 
 namespace
 {
@@ -722,6 +723,17 @@ void CharacterService::BroadcastActorData(Player* apPlayer, const entt::entity a
     notifySpawnData.NewActorData = acActorData;
 
     GameServer::Get()->SendToPlayersInRange(notifySpawnData, acEntity, apPlayer);
+}
+
+void CharacterService::sendSpellRemoveEvent(Player* apPlayer, const entt::entity acEntity) const noexcept
+{
+    // broadcast to nearby players
+    NotifyRemoveSpell removeMessage;
+    //player server id
+    removeMessage.TargetId = apPlayer->GetId();
+    // I'd like to use GameID and not FormID to allow differences in load order
+    // Implement something like that when possible
+    //removeMessage.SpellId = World::ToInteger(acEntity);
 }
 
 void CharacterService::ProcessFactionsChanges() const noexcept

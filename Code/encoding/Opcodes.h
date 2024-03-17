@@ -84,6 +84,7 @@ enum ServerOpcode : unsigned char
     kNotifySpellCast,
     kNotifyInterruptCast,
     kNotifyAddTarget,
+    kNotifyRemoveSpell,
     kNotifyProjectileLaunch,
     kNotifyScriptAnimation,
     kNotifyDrawWeapon,

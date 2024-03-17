@@ -64,6 +64,8 @@ protected:
     void ProcessFactionsChanges() const noexcept;
     void ProcessMovementChanges() const noexcept;
 
+    void sendSpellRemoveEvent(Player* apPlayer, const entt::entity acEntity) const noexcept;
+
 private:
     World& m_world;
 

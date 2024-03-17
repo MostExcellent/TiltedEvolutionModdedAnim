@@ -4,6 +4,7 @@
 #include <Events/EventDispatcher.h>
 #include <Messages/AddTargetRequest.h>
 #include <Messages/NotifyAddTarget.h>
+#include <Messages/NotifyRemoveSpell.h>
 
 struct World;
 struct TransportService;
@@ -62,6 +63,10 @@ protected:
      * @brief Applies a magic effect based on a server message.
      */
     void OnNotifyAddTarget(const NotifyAddTarget& acMessage) noexcept;
+    /*
+    * @brief Handles removal of a spell
+    */
+    void OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexcept;
 
 private:
     /**
