@@ -70,22 +70,27 @@ void MagicService::OnAddTargetRequest(const PacketEvent<AddTargetRequest>& acMes
 
 void MagicService::OnRemoveSpellRequest(const PacketEvent<RemoveSpellRequest>& acMessage) const noexcept
 {
-    auto& message = acMessage.Packet;
-
-    NotifyRemoveSpell notify;
-    // I don't think we need targetId since that can be inferred from the sender
-    //notify.TargetId = acMessage.GetSender();
-    notify.SpellId = message.SpellId;
-    if (acMessage.GetSender()->GetCharacter().has_value())
-    {
-        const auto entity = static_cast<entt::entity>(acMessage.GetSender()->GetCharacter().value());
-        //TargetID is entity as uint32_t
-        notify.TargetId = World::ToInteger(entity);
-        if (!GameServer::Get()->SendToPlayersInRange(notify, entity, acMessage.GetSender()))
-            spdlog::error("{}: SendToPlayersInRange failed", __FUNCTION__);
-    }
-    else
+    const auto& message = acMessage.Packet;
+    
+    if (!acMessage.GetSender()->GetCharacter().has_value())
     {
         spdlog::error("{}: Sender has no character", __FUNCTION__);
+        return;
     }
+    const auto senderEntity = static_cast<entt::entity>(acMessage.GetSender()->GetCharacter().value());
+    // Find the entity associated with the TargetId
+    auto targetView = m_world.view<FormIdComponent>();
+    const auto& targetFormId = targetView.get<FormIdComponent>(senderEntity);
+    if (!targetFormId)
+    {
+        spdlog::error("{}: TargetId has no FormIdComponent", __FUNCTION__);
+        return;
+    }
+    // Construct the NotifyRemoveSpell message
+    NotifyRemoveSpell notify;
+    notify.TargetId = targetFormId.Id; // TargetId is a GameId with the formId of the target
+    notify.SpellId = message.SpellId;
+    // Send the message to all players in range
+    if (!GameServer::Get()->SendToPlayersInRange(notify, senderEntity, acMessage.GetSender()))
+        spdlog::error("{}: SendToPlayersInRange failed", __FUNCTION__);
 }

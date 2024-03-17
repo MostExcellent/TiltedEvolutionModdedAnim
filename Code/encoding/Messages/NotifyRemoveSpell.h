@@ -21,7 +21,7 @@ struct NotifyRemoveSpell final : ServerMessage
         return GetOpcode() == acRhs.GetOpcode() && TargetId == acRhs.TargetId && SpellId == acRhs.SpellId;
     }
 
-    uint32_t TargetId{};
+    GameId TargetId{};
     //Player& Target;
     GameId SpellId{};
 };

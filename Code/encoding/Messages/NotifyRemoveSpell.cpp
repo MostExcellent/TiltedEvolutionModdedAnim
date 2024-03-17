@@ -3,12 +3,14 @@
 
 void NotifyRemoveSpell::SerializeRaw(TiltedPhoques::Buffer::Writer& aWriter) const noexcept
 {
-    Serialization::WriteVarInt(aWriter, TargetId);
+    //Serialization::WriteVarInt(aWriter, TargetId);
+    TargetId.Serialize(aWriter);
     SpellId.Serialize(aWriter);
 }
 
 void NotifyRemoveSpell::DeserializeRaw(TiltedPhoques::Buffer::Reader& aReader) noexcept
 {
-    TargetId = Serialization::ReadVarInt(aReader);
+    //TargetId = Serialization::ReadVarInt(aReader);
+    TargetId.Deserialize(aReader);
     SpellId.Deserialize(aReader);
 }
