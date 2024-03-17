@@ -16,6 +16,7 @@
 #include <PlayerCharacter.h>
 
 #include <Effects/ActiveEffect.h>
+#include <Messages/RemoveSpellRequest.h>
 
 TP_THIS_FUNCTION(TAddTarget, bool, MagicTarget, MagicTarget::AddTargetData& arData);
 TP_THIS_FUNCTION(TRemoveSpell, bool, Actor, MagicItem* apSpell);
@@ -176,17 +177,23 @@ bool TP_MAKE_THISCALL(HookAddTarget, MagicTarget, MagicTarget::AddTargetData& ar
 }
 
 // Designed to run when we hook removespell (AddressLib ID is 38717)
-// Currently doesn't do anything but log spell removals from the local player
-// If this works we can use it to sync spell removals from remote players
+// Sends a message to the server to remove the spell from this player on other clients
 bool TP_MAKE_THISCALL(HookRemoveSpell, Actor, MagicItem* apSpell)
-{
-    if (apThis->GetExtension()->IsLocalPlayer())
+{   
+    bool result = TiltedPhoques::ThisCall(RealRemoveSpell, apThis, apSpell);
+    if (apThis->GetExtension()->IsLocalPlayer() && result)
     {
         // Log spell info
         spdlog::info("Removing spell {}, ID: {} from local player", apSpell->GetName() , apSpell->formID);
+        RemoveSpellRequest removalRequest;
+        //removalRequest.TargetId = apThis->formID;
+        // TargetId not needed as we know it's the local player
+        //Get spell id from the world modsystem as gameid
+        removalRequest.SpellId = World::Get().GetModSystem().GameIdFromFormId(apSpell->formID);
+        World::Get().GetRunner().Trigger(removalRequest);
     }
 
-    return TiltedPhoques::ThisCall(RealRemoveSpell, apThis, apSpell);
+    return result;
 }
 
 

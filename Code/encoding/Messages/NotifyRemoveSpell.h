@@ -1,6 +1,7 @@
 #pragma once
 #include "Message.h"
 #include <Structs/GameId.h>
+#include <server/Game/Player.h>
 
 // Is a server message the correct approach?
 struct NotifyRemoveSpell final : ServerMessage
@@ -21,5 +22,6 @@ struct NotifyRemoveSpell final : ServerMessage
     }
 
     uint32_t TargetId{};
+    //Player& Target;
     GameId SpellId{};
 };
