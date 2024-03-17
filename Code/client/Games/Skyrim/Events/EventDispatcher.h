@@ -1,7 +1,6 @@
 #pragma once
 
 #include <TESObjectREFR.h>
-#include <server/Game/Player.h>
 
 template <class T> struct BSTEventSink;
 

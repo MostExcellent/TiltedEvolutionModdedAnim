@@ -66,7 +66,9 @@ protected:
     /*
     * @brief Handles removal of a spell
     */
+#if TP_SKYRIM64
     void OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexcept;
+#endif
 
 private:
     /**
@@ -102,4 +104,5 @@ private:
     entt::scoped_connection m_notifyInterruptCastConnection;
     entt::scoped_connection m_addTargetEventConnection;
     entt::scoped_connection m_notifyAddTargetConnection;
+    entt::scoped_connection m_notifyRemoveSpell;
 };

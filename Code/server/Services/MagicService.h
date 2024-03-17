@@ -34,7 +34,10 @@ protected:
     /**
     * @brief Relays spell removal messages to other clients.
     */
+#if TP_SKYRIM64
     void OnRemoveSpellRequest(const PacketEvent<RemoveSpellRequest>& acMessage) const noexcept;
+#endif
+
 
 private:
     World& m_world;
@@ -42,5 +45,7 @@ private:
     entt::scoped_connection m_spellCastConnection;
     entt::scoped_connection m_interruptCastConnection;
     entt::scoped_connection m_addTargetConnection;
+#if TP_SKYRIM64
     entt::scoped_connection m_removeSpellConnection;
+#endif
 };
