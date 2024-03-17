@@ -1,4 +1,3 @@
-#include "EncodingPch.h"
 #include "NotifyRemoveSpell.h"
 
 void NotifyRemoveSpell::SerializeRaw(TiltedPhoques::Buffer::Writer& aWriter) const noexcept
