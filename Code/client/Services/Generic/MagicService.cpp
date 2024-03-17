@@ -550,6 +550,7 @@ void MagicService::OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexc
     }
 
     // Remove the spell from the actor
+    spdlog::info("Removing spell with form id {:X} from actor with form id {:X}", cSpellId, targetFormId);
     pActor->RemoveSpell(pSpell);
 }
 #endif
