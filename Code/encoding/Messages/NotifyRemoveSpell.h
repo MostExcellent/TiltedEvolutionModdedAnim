@@ -2,7 +2,6 @@
 #include "Message.h"
 #include <Structs/GameId.h>
 
-// Is a server message the correct approach?
 struct NotifyRemoveSpell final : ServerMessage
 {
     static constexpr ServerOpcode Opcode = kNotifyRemoveSpell;
@@ -20,7 +19,6 @@ struct NotifyRemoveSpell final : ServerMessage
         return GetOpcode() == acRhs.GetOpcode() && TargetId == acRhs.TargetId && SpellId == acRhs.SpellId;
     }
 
-    GameId TargetId{};
-    //Player& Target;
+    uint32_t TargetId{};
     GameId SpellId{};
 };

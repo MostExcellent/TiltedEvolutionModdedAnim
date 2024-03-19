@@ -13,6 +13,7 @@ struct UpdateEvent;
 struct SpellCastEvent;
 struct InterruptCastEvent;
 struct AddTargetEvent;
+struct RemoveSpellEvent;
 
 struct NotifySpellCast;
 struct NotifyInterruptCast;
@@ -63,10 +64,15 @@ protected:
      * @brief Applies a magic effect based on a server message.
      */
     void OnNotifyAddTarget(const NotifyAddTarget& acMessage) noexcept;
-    /*
-    * @brief Handles removal of a spell
-    */
+    
 #if TP_SKYRIM64
+    /**
+     * @brief Sends a message to remove a spell from a player.
+     */
+    void OnRemoveSpellEvent(const RemoveSpellEvent& acEvent) noexcept;
+    /*
+     * @brief Handles removal of a spell
+     */
     void OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexcept;
 #endif
 
@@ -104,5 +110,6 @@ private:
     entt::scoped_connection m_notifyInterruptCastConnection;
     entt::scoped_connection m_addTargetEventConnection;
     entt::scoped_connection m_notifyAddTargetConnection;
+    entt::scoped_connection m_removeSpellEventConnection;
     entt::scoped_connection m_notifyRemoveSpell;
 };
