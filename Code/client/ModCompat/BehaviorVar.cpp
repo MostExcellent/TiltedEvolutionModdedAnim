@@ -6,15 +6,13 @@
 // for unlimited behavior variables, for seeding modded behaviors with the original BehaviorVars
 // (decoupling STR devs decisions from what modders need to know) and support for beast forms
 // among many more changes.
-// 
+//
 // One of the greatest features ensuring the longevity of Bethesda games is their support
-// for community modification, and many of the most popular mods also change the behavior 
+// for community modification, and many of the most popular mods also change the behavior
 // of creatures. STR and FTR don't support mods as a matter of policy. And supporting
-// behavior mods is particularly difficult. This mod provides the option to use modified
-// behaviors in Skyrim|Fallout Together Reborn, but has yet to be endorsed by the TiltedPhoques 
-// team. Use at own risk.
-// 
-// The game determines a set of behavior variables that must be synced and locks that down.
+// behavior mods is particularly difficult.
+//
+// The game determines a set of behavior variables that must be synced and locks thatdown.
 // Changing the list is difficult, because behavior mods won't just add to the list, they
 // will change the order of the list also changing the shorthand numeric codes for behavior
 // vars to sync.
@@ -25,22 +23,22 @@
 //     3) We must add in the additional behavior variables requested by modders
 //     4) Finally, that will push us over some hard-coded limits, in particular
 //        a limit of 64 boolean vars that can be synced. Remove the limit.
-// 
+//
 #ifdef MODDED_BEHAVIOR_COMPATIBILITY
 
-#include <immersive_launcher/launcher.h>
-#include <BSAnimationGraphManager.h>
-#include <Games/ActorExtension.h>
 #include "BehaviorVar.h"
 #include "BehaviorVarsMap.h"
+#include <BSAnimationGraphManager.h>
+#include <Games/ActorExtension.h>
+#include <immersive_launcher/launcher.h>
 
 #if TP_SKYRIM64
-#include <Structs/Skyrim/AnimationGraphDescriptor_Master_Behavior.h>
-#include <Camera/TESCamera.h>       // Camera 1st person is only in Skyrim?
 #include <Camera/PlayerCamera.h>
+#include <Camera/TESCamera.h> // Camera 1st person is only in Skyrim?
+#include <Structs/Skyrim/AnimationGraphDescriptor_Master_Behavior.h>
 #endif
 
-//#include <functional>
+// #include <functional>
 
 #include <mutex>
 std::mutex mutex_lock;
@@ -58,7 +56,7 @@ BehaviorVar* BehaviorVar::Get()
     return BehaviorVar::single;
 }
 
-// A simple function can be declared, caller file doesn't have to include our 
+// A simple function can be declared, caller file doesn't have to include our
 // class/struct header.
 const AnimationGraphDescriptor* BehaviorVarPatch(BSAnimationGraphManager* apManager, Actor* apActor)
 {
@@ -82,7 +80,8 @@ std::string toLowerCase(const std::string& str)
 
 // Converts the keys of our map to lowercase.
 // This is for our "Plan C" if a vanilla var isn't found to make sure it isn't just a case-sensitivity issue.
-void lowerCaseKeys(const std::map<const std::string, const uint32_t>& map, std::map<const std::string, const uint32_t>& lowerCaseMap)
+void lowerCaseKeys(const std::map<const std::string, const uint32_t>& map,
+                   std::map<const std::string, const uint32_t>& lowerCaseMap)
 {
     for (const auto& item : map)
         lowerCaseMap.insert({toLowerCase(item.first), item.second});
@@ -131,7 +130,8 @@ void processVariableSet(const std::map<const std::string, const uint32_t>& rever
                 if (foundLowerMap != lowerCaseMap.end())
                 {
                     variableSet.insert(foundLowerMap->second);
-                    spdlog::warn("Compensated for incorrect capitalization of variable '{}' with case-insensitive search", item);
+                    spdlog::warn(
+                        "Compensated for incorrect capitalization of variable '{}' with case-insensitive search", item);
                 }
                 else
                 {
@@ -143,10 +143,10 @@ void processVariableSet(const std::map<const std::string, const uint32_t>& rever
                 spdlog::error("Unable to find variable {} (lowercase)", item);
             }
         }
-        //else
+        // else
         //{
-        //    //Log it?
-        //}
+        //     //Log it?
+        // }
     }
 }
 
@@ -157,7 +157,7 @@ void processVariableSet(const std::map<const std::string, const uint32_t>& rever
 // BehaviorVars chosen (numerically) by the STR devs to their new numeric values.
 // We do this with a hack to translate old numeric value back to a string, then we
 // can forward-translate the string to its new numeric value.
-// 
+//
 // The machine-generated table hack to do this can be removed with STR-devs'
 // permission to also embed the string information in the Code\encoding\structs files.
 //
@@ -175,8 +175,12 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
 
     // Populate lists from the original descriptor
     for (auto& item : pDescriptor->BooleanLookUpTable)
-        if ((strValue = origVars.find(hash, item)).empty())
+    {
+        const auto strValue = origVars.find(hash, item);
+        if (strValue.empty())
             spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original BooleanVar {}", item);
+        else if (reversemap.find(strValue) == reversemap.end())
+            spdlog::error("BehaviorVar::seedAnimationVariables unable to find BooleanVar {}", strValue);
         else
             boolVars.insert(reversemap[strValue]);
     }
@@ -193,7 +197,7 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
             spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original IntegerVar {}", item);
         else if (reversemap.find(strValue) == reversemap.end())
             spdlog::error("BehaviorVar::seedAnimationVariables unable to find IntegerVar {}", strValue);
-    }
+        else
             intVars.insert(reversemap[strValue]);
     }
 
@@ -201,14 +205,6 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
     processVariableSet(reversemap, boolVars, boolVarNames, CaseFallback::VarAndMap);
     processVariableSet(reversemap, floatVars, floatVarNames, CaseFallback::VarAndMap);
     processVariableSet(reversemap, intVars, intVarNames, CaseFallback::VarAndMap);
-        const auto strValue = origVars.find(hash, item);
-        if (strValue.empty())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original IntegerVar {}", item);
-        else if (reversemap.find(strValue) == reversemap.end())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find IntegerVar {}", strValue);
-        else
-            intVars.insert(reversemap[strValue]);
-    }
 }
 
 // Syntax for a signature is [!]sig1[,[!]sig2]... Must be at least one. Each signature var possibly negated
