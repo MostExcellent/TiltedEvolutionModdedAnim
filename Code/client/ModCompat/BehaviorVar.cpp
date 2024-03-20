@@ -71,8 +71,7 @@ namespace
 std::string toLowerCase(const std::string& aStr)
 {
     std::string lowerCaseStr;
-    lowerCaseStr.reserve(aStr.size());
-    std::transform(aStr.begin(), aStr.end(), lowerCaseStr.begin(),
+    std::transform(aStr.begin(), aStr.end(), std::back_inserter(lowerCaseStr),
                    [](unsigned char c) { return std::tolower(c); });
     return lowerCaseStr;
 }
