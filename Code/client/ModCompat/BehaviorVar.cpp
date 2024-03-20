@@ -10,9 +10,11 @@
 // One of the greatest features ensuring the longevity of Bethesda games is their support
 // for community modification, and many of the most popular mods also change the behavior 
 // of creatures. STR and FTR don't support mods as a matter of policy. And supporting
-// behavior mods is particularly difficult.
+// behavior mods is particularly difficult. This mod provides the option to use modified
+// behaviors in Skyrim|Fallout Together Reborn, but has yet to be endorsed by the TiltedPhoques 
+// team. Use at own risk.
 // 
-// The game determines a set of behavior variables that must be synced and locks thatdown.
+// The game determines a set of behavior variables that must be synced and locks that down.
 // Changing the list is difficult, because behavior mods won't just add to the list, they
 // will change the order of the list also changing the shorthand numeric codes for behavior
 // vars to sync.
@@ -173,12 +175,8 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
 
     // Populate lists from the original descriptor
     for (auto& item : pDescriptor->BooleanLookUpTable)
-    {
-        const auto strValue = origVars.find(hash, item);
-        if (strValue.empty())
+        if ((strValue = origVars.find(hash, item)).empty())
             spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original BooleanVar {}", item);
-        else if (reversemap.find(strValue) == reversemap.end())
-            spdlog::error("BehaviorVar::seedAnimationVariables unable to find BooleanVar {}", strValue);
         else
             boolVars.insert(reversemap[strValue]);
     }
@@ -195,7 +193,7 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
             spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original IntegerVar {}", item);
         else if (reversemap.find(strValue) == reversemap.end())
             spdlog::error("BehaviorVar::seedAnimationVariables unable to find IntegerVar {}", strValue);
-        else
+    }
             intVars.insert(reversemap[strValue]);
     }
 
@@ -203,6 +201,14 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
     processVariableSet(reversemap, boolVars, boolVarNames, CaseFallback::VarAndMap);
     processVariableSet(reversemap, floatVars, floatVarNames, CaseFallback::VarAndMap);
     processVariableSet(reversemap, intVars, intVarNames, CaseFallback::VarAndMap);
+        const auto strValue = origVars.find(hash, item);
+        if (strValue.empty())
+            spdlog::error("BehaviorVar::seedAnimationVariables unable to find string for original IntegerVar {}", item);
+        else if (reversemap.find(strValue) == reversemap.end())
+            spdlog::error("BehaviorVar::seedAnimationVariables unable to find IntegerVar {}", strValue);
+        else
+            intVars.insert(reversemap[strValue]);
+    }
 }
 
 // Syntax for a signature is [!]sig1[,[!]sig2]... Must be at least one. Each signature var possibly negated
@@ -212,7 +218,6 @@ void BehaviorVar::seedAnimationVariables(uint64_t hash, const AnimationGraphDesc
 //
 const std::vector<std::string> BehaviorVar::tokenizeBehaviorSig(const std::string signature) const
 {
-
     const static std::string notVal{"!"};
     std::vector<std::string> retVal;
     size_t commaPos;
@@ -382,7 +387,7 @@ const AnimationGraphDescriptor* BehaviorVar::Patch(BSAnimationGraphManager* apMa
  
     spdlog::info("BehaviorVar::Patch: actor with formID {:x} with hash of {} has modded (or not synced) behavior", hexFormID, hash);
 
-    // Get all animation variables for this actor, then create a reversemap to go from strings to animation enum.
+    // Get all animation variables for this actor, then create a acReverseMap to go from strings to animation enum.
     auto pDumpVar = apManager->DumpAnimationVariables(false);
     std::map<const std::string, const uint32_t> reversemap;
     spdlog::info("Known behavior variables for formID {:x}:", hexFormID);

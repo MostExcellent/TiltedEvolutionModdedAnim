@@ -3,7 +3,7 @@
 No permission to post any variation of this fork on Nexus. For now. It's coming, there are just more things to fix first so we don't get flooded with support requests.  
 
 # Credits
-This fork is inspired by Edho08's original brilliant effort to figure out how to patch Nemesis (and now Pandora) support into TiltedPhoques Skyrim Together Reborn. Since then, Spvvd and Ragley have put in a lot of maintainance effort. @rfortier and @MostExcellent have been working on this verison.
+This fork is inspired by Edho08's original effort to figure out how to patch Nemesis (and now Pandora) support into TiltedPhoques Skyrim Together Reborn. Since then, Spvvd and Ragley have put in a lot of maintainance effort. @rfortier and @MostExcellent have been working on this verison.
 
 # Status
 
