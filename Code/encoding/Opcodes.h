@@ -31,6 +31,7 @@ enum ClientOpcode : unsigned char
     kSpellCastRequest,
     kInterruptCastRequest,
     kAddTargetRequest,
+    kRequestRemoveSpell,
     kProjectileLaunchRequest,
     kScriptAnimationRequest,
     kDrawWeaponRequest,
@@ -52,8 +53,7 @@ enum ClientOpcode : unsigned char
     kRequestCurrentWeather,
     kRequestSetWaypoint,
     kRequestRemoveWaypoint,
-    kClientOpcodeMax,
-    kRequestRemoveSpell
+    kClientOpcodeMax
 };
 
 enum ServerOpcode : unsigned char
