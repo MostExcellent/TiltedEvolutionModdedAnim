@@ -64,8 +64,6 @@ protected:
      * @brief Applies a magic effect based on a server message.
      */
     void OnNotifyAddTarget(const NotifyAddTarget& acMessage) noexcept;
-    
-#if TP_SKYRIM64
     /**
      * @brief Sends a message to remove a spell from a player.
      */
@@ -74,7 +72,6 @@ protected:
      * @brief Handles removal of a spell
      */
     void OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexcept;
-#endif
 
 private:
     /**

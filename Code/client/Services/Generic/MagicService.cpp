@@ -422,7 +422,7 @@ void MagicService::OnNotifyAddTarget(const NotifyAddTarget& acMessage) noexcept
 #endif
 }
 
-void MagicService::OnRemoveSpellEvent(const RemoveSpellEvent& acEvent)
+void MagicService::OnRemoveSpellEvent(const RemoveSpellEvent& acEvent) noexcept
 {
     if (!m_transport.IsConnected())
         return;
