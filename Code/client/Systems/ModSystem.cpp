@@ -76,26 +76,6 @@ uint32_t ModSystem::GetGameId(const GameId& acGameId) const noexcept
     return GetGameId(acGameId.ModId, acGameId.BaseId);
 }
 
-GameId ModSystem::GameIdFromFormId(uint32_t aFormId) const noexcept
-{
-    GameId gameId;
-    auto itor = m_liteToServer.find((aFormId & 0x00FFF000) >> 12);
-    if (itor != std::end(m_liteToServer))
-    {
-        gameId.ModId = itor->second;
-        gameId.BaseId = aFormId & 0x00000FFF;
-        return gameId;
-    }
-    auto nonLiteItor = m_standardToServer[aFormId >> 24];
-    if (nonLiteItor != 0)
-    {
-        gameId.ModId = nonLiteItor;
-        gameId.BaseId = aFormId & 0x00FFFFFF;
-        return gameId;
-    }
-    return gameId;
-}
-
 void ModSystem::HandleMods(const Mods& acMods) noexcept
 {
     m_serverToGame.clear();

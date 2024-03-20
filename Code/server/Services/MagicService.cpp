@@ -18,9 +18,7 @@ MagicService::MagicService(World& aWorld, entt::dispatcher& aDispatcher) noexcep
     m_spellCastConnection = aDispatcher.sink<PacketEvent<SpellCastRequest>>().connect<&MagicService::OnSpellCastRequest>(this);
     m_interruptCastConnection = aDispatcher.sink<PacketEvent<InterruptCastRequest>>().connect<&MagicService::OnInterruptCastRequest>(this);
     m_addTargetConnection = aDispatcher.sink<PacketEvent<AddTargetRequest>>().connect<&MagicService::OnAddTargetRequest>(this);
-    #if TP_SKYRIM64
     m_removeSpellConnection = aDispatcher.sink<PacketEvent<RemoveSpellRequest>>().connect<&MagicService::OnRemoveSpellRequest>(this);
-    #endif
 }
 
 void MagicService::OnSpellCastRequest(const PacketEvent<SpellCastRequest>& acMessage) const noexcept
@@ -77,6 +75,8 @@ void MagicService::OnRemoveSpellRequest(const PacketEvent<RemoveSpellRequest>& a
     NotifyRemoveSpell notify;
     notify.TargetId = message.TargetId;
     notify.SpellId = message.SpellId;
+
+    //spdlog::info("RemoveSpellRequest: TargetId: {}, Spell baseId: {}", notify.TargetId, notify.SpellId.BaseId);
 
     const auto entity = static_cast<entt::entity>(message.TargetId);
     if (!GameServer::Get()->SendToPlayersInRange(notify, entity, acMessage.GetSender()))

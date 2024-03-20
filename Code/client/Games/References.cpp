@@ -867,6 +867,7 @@ void Actor::RemoveSpell(MagicItem* apSpell) noexcept
         spdlog::error("Actor::RemoveSpell: apSpell is null");
         return;
     }
+    //spdlog::info("Removing spell: {} from actor: {}", apSpell->formID, formID);
     TiltedPhoques::ThisCall(removeSpell, this, apSpell);
 }
 #endif
