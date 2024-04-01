@@ -4,6 +4,7 @@ target(name)
     set_kind("static")
     set_group("Client")
     add_defines(def)
+
     add_includedirs(".")
     set_pcxxheader("TiltedOnlinePCH.h")
 
@@ -23,7 +24,10 @@ target(name)
 
     -- only include selected files
     if name == "SkyrimTogetherClient" then
-        add_files("Games/Skyrim/**.cpp")
+       -- Single-commit enable MODDED_BEHAVIOR_COMPATIBILITY
+       -- It might work for TP_FALLOUT also, but needs testing
+       add_defines("MODDED_BEHAVIOR_COMPATIBILITY")
+       add_files("Games/Skyrim/**.cpp")
         add_headerfiles("Games/Skyrim/**.h")
         -- rather hacky:
         add_includedirs("Games/Skyrim")
