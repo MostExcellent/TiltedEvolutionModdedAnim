@@ -486,9 +486,13 @@ void MagicService::OnNotifyRemoveSpell(const NotifyRemoveSpell& acMessage) noexc
         return;
     }
 
+#if TP_SKYRIM64
     // Remove the spell from the actor
     //spdlog::info("Removing spell with form id {:X} from actor with form id {:X}", cSpellId, targetFormId);
     pActor->RemoveSpell(pSpell);
+#else
+    spdlog::info("Remove spell not implemented for fallout 4");
+#endif
 }
 
 void MagicService::ApplyQueuedEffects() noexcept
