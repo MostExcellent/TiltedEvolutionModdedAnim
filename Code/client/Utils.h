@@ -20,6 +20,8 @@
 #define POINTER_FALLOUT4(className, variableName, ...) ;
 #endif
 
+# define KINDA_SMALL_NUMBER 1.e-4f // Useful for comparing floats
+
 // TODO: should this be debug only? I removed the check since debug is broken, can only use releasedbg
 #define TP_ASSERT(Expr, Msg, ...)                                    \
     if (!(Expr))                                                     \
@@ -31,6 +33,12 @@ struct TESForm;
 
 namespace Utils
 {
+
+// Function to check if two floats are less than KINDA_SMALL_NUMBER apart, basically, if nearly equal
+inline bool IsNearlyEqual(float a, float b)
+{
+    return std::abs(a - b) < KINDA_SMALL_NUMBER;
+}
 
 static void Assert(const char* apExpression, const char* apMessage)
 {
