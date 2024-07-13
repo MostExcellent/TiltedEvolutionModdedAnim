@@ -1,6 +1,6 @@
 #include <Structs/AnimationVariables.h>
 #include <TiltedCore/Serialization.hpp>
-#include <client/Utils.h>
+#include <iostream>
 
 bool AnimationVariables::operator==(const AnimationVariables& acRhs) const noexcept
 {
@@ -17,30 +17,28 @@ bool AnimationVariables::operator!=(const AnimationVariables& acRhs) const noexc
 // translation needed. Should be better than winding down several layers to 
 // TiltedPhoques::Serialization::WriteBool, though.
 //
-// I don't know if array-style indexing is better with the compiler
 void AnimationVariables::VectorBool_to_String(const Vector<bool>& bools, TiltedPhoques::String& chars) const
 {
-    chars.resize((bools.size() + 7) >> 3, 0);
+    chars.assign((bools.size() + 7) >> 3, 0);
 
-    for (size_t i = 0; i < bools.size(); ++i)
-    {
-        if (bools[i])
-            chars[i >> 3] |= 1 << (i & 7);
-    }
+    auto citer = chars.begin();
+    auto biter = bools.begin();
+    for (uint32_t mask = 1; biter < bools.end(); mask = 1, citer++)
+        for (; mask < 0x100 && biter < bools.end(); mask <<= 1)
+            *citer |= *biter++ ? mask : 0;
 }
 
+// The Vector<bool> must be the correct size when called.
+//
 void AnimationVariables::String_to_VectorBool(const TiltedPhoques::String& chars, Vector<bool>& bools)
 {
-    bools.resize(chars.size() * 8);
+    bools.assign(bools.size(), false);
 
-    for (size_t i = 0; i < chars.size(); ++i)
-    {
-        unsigned char byte = chars[i];
-        for (size_t j = 0; j < 8; ++j)
-        {
-            bools[i * 8 + j] = (byte >> (7 - j)) & 1;
-        }
-    }
+    auto citer = chars.begin();
+    auto biter = bools.begin();
+    for (uint32_t mask = 1; biter < bools.end(); mask = 1, citer++)
+        for (; mask < 0x100 && biter < bools.end(); mask <<= 1)
+            *biter++ = (*citer & mask) ? true : false;
 }
 
 
@@ -83,8 +81,7 @@ void AnimationVariables::GenerateDiff(const AnimationVariables& aPrevious, Tilte
     for (size_t i = 0; i < Integers.size(); i++)
         changedVector.push_back(aPrevious.Integers.size() != Integers.size() || aPrevious.Integers[i] != Integers[i]);
     for (size_t i = 0; i < Floats.size(); i++)
-        changedVector.push_back(
-            aPrevious.Floats.size() != Floats.size() || !Utils::IsNearlyEqual(aPrevious.Floats[i], Floats[i]));
+        changedVector.push_back(aPrevious.Floats.size() != Floats.size() || aPrevious.Floats[i] != Floats[i]);
 
     // Now serialize: VarInts Booleans.size(), Integers.size(), Floats.size(),
     // then the change table bits, then changed Integers, then changed Floats.
@@ -97,12 +94,12 @@ void AnimationVariables::GenerateDiff(const AnimationVariables& aPrevious, Tilte
     TiltedPhoques::Serialization::WriteString(aWriter, chars);
 
     auto biter = changedVector.begin() + Booleans.size();
-    for (unsigned int Integer : Integers)
+    for (size_t i = 0; i < Integers.size(); i++)
         if (*biter++)
-            TiltedPhoques::Serialization::WriteVarInt(aWriter, Integer & 0xFFFFFFFF);
-    for (float Float : Floats)
+            TiltedPhoques::Serialization::WriteVarInt(aWriter, Integers[i] & 0xFFFFFFFF);
+    for (size_t i = 0; i < Floats.size(); i++)
         if (*biter++)
-            TiltedPhoques::Serialization::WriteFloat(aWriter, Float);
+            TiltedPhoques::Serialization::WriteFloat(aWriter, Floats[i]);
 }
 
 // Reads 3 VarInts that represent the size of the Booleans, Integers and Floats.

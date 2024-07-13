@@ -2,7 +2,7 @@
 #include "BehaviorVarsMap.h"
 
 
-uint32_t BehaviorVarsMap::find(const uint64_t acKey, const std::string& acName)
+uint32_t BehaviorVarsMap::find(const uint64_t acKey, const std::string acName)
 {
     auto map = m_map.find(acKey);
 
@@ -33,7 +33,7 @@ std::string BehaviorVarsMap::find(const uint64_t acKey, const uint32_t acValue)
     return empty;
 }
 
-void BehaviorVarsMap::Register(const BehaviorVars& aMap)
+void BehaviorVarsMap::Register(const BehaviorVars aMap)
 {
     m_map.insert_or_assign(aMap.m_key, aMap);
 }
@@ -48,4 +48,4 @@ BehaviorVarsMap& BehaviorVarsMap::getInstance()
     return instance;
 }
 
-#endif //MODDED_BEHAVIOR_COMPATIBILITY
+#endif MODDED_BEHAVIOR_COMPATIBILITY

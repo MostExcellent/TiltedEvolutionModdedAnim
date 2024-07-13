@@ -1,5 +1,4 @@
 #pragma once
-#include <ranges>
 
 
 struct BehaviorVars
@@ -22,17 +21,17 @@ class BehaviorVarsMap
     void operator=(BehaviorVarsMap const&)  = delete;
 
   public:
-    uint32_t find(const uint64_t acKey, const std::string& acName);
+    uint32_t find(const uint64_t acKey, const std::string acName);
 
     std::string find(const uint64_t acKey, const uint32_t acValue);
     void hashes(std::vector<uint64_t>& aHashes) const
     {
         aHashes.clear();
-        for (const auto& key : m_map | std::views::keys)
-            aHashes.push_back(key);
+        for (auto& item : m_map)
+            aHashes.push_back(item.first);
     };
 
-    void Register(const BehaviorVars& aMap);
+    void Register(const BehaviorVars aMap);
 
     static BehaviorVarsMap& getInstance();
 };
