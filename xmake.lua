@@ -47,7 +47,8 @@ add_requires(
 if is_plat("windows") then
     add_requires(
         "discord 3.2.1", 
-        "imgui v1.89.7"
+        "imgui v1.89.7",
+        "rsm-autotoml 2020.12.29" -- to make 100% sure engine fixes config has memory hooks disabled
     )
 end
 

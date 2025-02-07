@@ -66,7 +66,8 @@ local function build_launcher()
         "glm",
         "cef",
         "mem",
-        "sentry-native")
+        "sentry-native",
+        "rsm-autotoml")
 end
 
 target("SkyrimImmersiveLauncher")

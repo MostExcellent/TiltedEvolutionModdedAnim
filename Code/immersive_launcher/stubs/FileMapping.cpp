@@ -8,6 +8,7 @@
 #include <TiltedCore/Initializer.hpp>
 
 #include "DllBlocklist.h"
+#include "DllManager.h"
 #include "TargetConfig.h"
 #include "Utils/NtInternal.h"
 #include "utils/Error.h"
@@ -269,20 +270,17 @@ DWORD WINAPI TP_GetModuleFileNameA(HMODULE aModule, char* alpFileName, DWORD aBu
 NTSTATUS WINAPI TP_LdrLoadDll(const wchar_t* apPath, uint32_t* apFlags, UNICODE_STRING* apFileName, HANDLE* apHandle)
 {
     TP_EMPTY_HOOK_PLACEHOLDER;
+    TP_EMPTY_HOOK_PLACEHOLDER;
 
-    std::wstring_view fileName(apFileName->Buffer, apFileName->Length / sizeof(wchar_t));
-    size_t pos = fileName.find_last_of(L'\\');
-    if (pos != std::wstring_view::npos && (pos + 1) != fileName.length())
-    {
-        if (stubs::IsDllBlocked(&fileName[pos + 1]))
-        {
-            // invalid image hash
-            // this signals windows to *NOT TRY* loading it again at a later time.
-            return 0xC0000428;
-        }
-    }
-
-    return RealLdrLoadDll(apPath, apFlags, apFileName, apHandle);
+    DllManager& manager = DllManager::Get();
+    
+    // If the DLL is allowed to load, we let it through, otherwise block it.
+    if (manager.HandleDllLoad(apPath, apFlags, apFileName, apHandle))
+        return RealLdrLoadDll(apPath, apFlags, apFileName, apHandle);
+    
+    // 0xC0000428 is invalid image hash error code
+    // this signals windows to *NOT TRY* loading it again at a later time.
+    return 0xC0000428;
 }
 } // namespace
 
