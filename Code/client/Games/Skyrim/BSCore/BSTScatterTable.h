@@ -790,14 +790,16 @@ public:
     {
         _assign(rhs);
     }
-    BSTScatterTable(BSTScatterTable&& rhs) { _assign(rhs); }
+    BSTScatterTable(BSTScatterTable&& rhs)  noexcept
+    {
+        _assign(rhs); }
 
     BSTScatterTable& operator=(const BSTScatterTable& rhs)
     {
         _assign(rhs);
         return *this;
     }
-    BSTScatterTable& operator=(BSTScatterTable&& rhs)
+    BSTScatterTable& operator=(BSTScatterTable&& rhs) noexcept
     {
         _assign(rhs);
         return *this;

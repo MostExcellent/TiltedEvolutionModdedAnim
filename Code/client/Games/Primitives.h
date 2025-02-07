@@ -242,7 +242,8 @@ template <class T> struct GamePtr
             m_pPointer->handleRefObject.IncRef();
     }
 
-    GamePtr(GamePtr<T>&& aRhs) { std::swap(m_pPointer, aRhs.m_pPointer); }
+    GamePtr(GamePtr<T>&& aRhs) noexcept
+    { std::swap(m_pPointer, aRhs.m_pPointer); }
 
     GamePtr& operator=(const GamePtr<T>& acRhs)
     {
@@ -268,7 +269,7 @@ template <class T> struct GamePtr
         return *this;
     }
 
-    GamePtr& operator=(GamePtr<T>&& aRhs)
+    GamePtr& operator=(GamePtr<T>&& aRhs) noexcept
     {
         std::swap(m_pPointer, aRhs.m_pPointer);
 
