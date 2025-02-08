@@ -8,7 +8,7 @@
 #include <TiltedCore/Initializer.hpp>
 
 #include "DllBlocklist.h"
-#include "DllManager.h"
+#include "DllLoadManager.h"
 #include "TargetConfig.h"
 #include "Utils/NtInternal.h"
 #include "utils/Error.h"
@@ -269,13 +269,12 @@ DWORD WINAPI TP_GetModuleFileNameA(HMODULE aModule, char* alpFileName, DWORD aBu
 // we use this function to enforce the DLL load policy
 NTSTATUS WINAPI TP_LdrLoadDll(const wchar_t* apPath, uint32_t* apFlags, UNICODE_STRING* apFileName, HANDLE* apHandle)
 {
-    TP_EMPTY_HOOK_PLACEHOLDER;
-    TP_EMPTY_HOOK_PLACEHOLDER;
+    TP_EMPTY_HOOK_PLACEHOLDER
+    //TP_EMPTY_HOOK_PLACEHOLDER
 
-    DllManager& manager = DllManager::Get();
-    
     // If the DLL is allowed to load, we let it through, otherwise block it.
-    if (manager.HandleDllLoad(apPath, apFlags, apFileName, apHandle))
+    if (DllLoadManager& manager = DllLoadManager::Get();
+        manager.HandleDllLoad(apPath, apFlags, apFileName, apHandle))
         return RealLdrLoadDll(apPath, apFlags, apFileName, apHandle);
     
     // 0xC0000428 is invalid image hash error code
@@ -297,34 +296,37 @@ void CoreStubsInit()
 
     VALIDATE(MH_Initialize());
 
+    // Initialize Dll filtering
+    DllLoadManager::Get().Initialize();
+
     if (!IsUsingMO2())
     {
         // we need two hooks here, even if this is kinda redundant, since we want to capture the RBP register
         // to detect if its game code, or launcher code being executed
-        VALIDATE(MH_CreateHookApi(L"KernelBase.dll", "GetModuleFileNameW", &TP_GetModuleFileNameW, (void**)&RealGetModuleFileNameW));
-        VALIDATE(MH_CreateHookApi(L"KernelBase.dll", "GetModuleFileNameA", &TP_GetModuleFileNameA, (void**)&RealGetModuleFileNameA));
+        VALIDATE(MH_CreateHookApi(L"KernelBase.dll", "GetModuleFileNameW", &TP_GetModuleFileNameW, reinterpret_cast<void**>(&RealGetModuleFileNameW)));
+        VALIDATE(MH_CreateHookApi(L"KernelBase.dll", "GetModuleFileNameA", &TP_GetModuleFileNameA, reinterpret_cast<void**>(&RealGetModuleFileNameA)));
     }
     else
     {
         // https://github.com/ModOrganizer2/usvfs/blob/master/src/usvfs_dll/hooks/kernel32.h#L42
         VALIDATE(MH_CreateHookApi(L"usvfs_x64.dll", "?hook_GetModuleFileNameW@usvfs@@YAKPEAUHINSTANCE__@@PEA_WK@Z", &TP_GetModuleFileNameW, (void**)&RealGetModuleFileNameW));
-        VALIDATE(MH_CreateHookApi(L"KernelBase.dll", "GetModuleFileNameA", &TP_GetModuleFileNameA, (void**)&RealGetModuleFileNameA));
+        VALIDATE(MH_CreateHookApi(L"KernelBase.dll", "GetModuleFileNameA", &TP_GetModuleFileNameA, reinterpret_cast<void**>(&RealGetModuleFileNameA)));
     }
-
+                                
     // SKSE calls
     // https://github.com/ianpatt/skse64/blob/d79e8f081194f538c24d493e1b57331d837a25c0/skse64_common/Utilities.cpp#L11
 
     // VALIDATE(MH_CreateHookApi(L"ntdll.dll", "LdrGetDllHandle", &TP_LdrGetDllHandle, (void**)&RealLdrGetDllHandle));
-    VALIDATE(MH_CreateHookApi(L"ntdll.dll", "LdrGetDllHandleEx", &TP_LdrGetDllHandleEx, (void**)&RealLdrGetDllHandleEx));
+    VALIDATE(MH_CreateHookApi(L"ntdll.dll", "LdrGetDllHandleEx", &TP_LdrGetDllHandleEx, reinterpret_cast<void**>(&RealLdrGetDllHandleEx)));
 
     // TODO(Vince): we need some check if usvfs already fucked with this?
     // MH_CreateHookApi(L"ntdll.dll", "LdrGetDllFullName", &TP_LdrGetDllFullName, (void**)&RealLdrGetDllFullName);
-    VALIDATE(MH_CreateHookApi(L"ntdll.dll", "LdrLoadDll", &TP_LdrLoadDll, (void**)&RealLdrLoadDll));
+    VALIDATE(MH_CreateHookApi(L"ntdll.dll", "LdrLoadDll", &TP_LdrLoadDll, reinterpret_cast<void**>(&RealLdrLoadDll)))
 
     // Starting with Windows 11 24H2 the call stack has changed and GetModuleHandle() no longer
     // downcalls to LdrGetDllHandleEx, so we have to hook this too.
-    VALIDATE(MH_CreateHookApi(L"kernel32.dll", "GetModuleHandleW", &TP_GetModuleHandleW, (void**)&RealGetModuleHandleW));
-    VALIDATE(MH_CreateHookApi(L"kernel32.dll", "GetModuleHandleA", &TP_GetModuleHandleA, (void**)&RealGetModuleHandleA));
+    VALIDATE(MH_CreateHookApi(L"kernel32.dll", "GetModuleHandleW", &TP_GetModuleHandleW, reinterpret_cast<void**>(&RealGetModuleHandleW)));
+    VALIDATE(MH_CreateHookApi(L"kernel32.dll", "GetModuleHandleA", &TP_GetModuleHandleA, reinterpret_cast<void**>(&RealGetModuleHandleA)));
 
     VALIDATE(MH_EnableHook(nullptr));
 }

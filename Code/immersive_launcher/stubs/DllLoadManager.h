@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <utils/WStringHasher.h>
+
 #include <functional>
 #include <string>
 #include <utils/ComUtils.h>
@@ -8,7 +10,7 @@
 
 //struct UNICODE_STRING;
 
-class DllManager
+class DllLoadManager
 {
 public:
     // Represents how we want to handle a specific DLL
@@ -21,7 +23,7 @@ public:
     // Structure to hold handler(s) and policies for a DLL
     struct DllHandling {
         DllHandling() = default;
-        DllHandling(DllPolicy aPolicy) : policy(aPolicy) {}
+        explicit DllHandling(DllPolicy aPolicy) : policy(aPolicy) {}
 
         DllPolicy policy = DllPolicy::BLOCK;
         std::function<bool()> PreloadHandler; // Return false in case of failure to prevent loading
@@ -30,12 +32,18 @@ public:
     };
 
     private:
-        static DllManager* s_instance;
+        static DllLoadManager* s_instance;
 
-        DllManager() = default;
-        ~DllManager() = default;
+        DllLoadManager() = default;
+        ~DllLoadManager() = default;
 
-    std::unordered_map<std::wstring, DllHandling> s_DllPolicies = {
+    std::unordered_map<
+    std::wstring, 
+    DllHandling,
+    WStringHasher,
+    std::equal_to<>  // Transparent comparator
+    >
+ s_DllPolicies = {
         {L"EngineFixes.dll", DllHandling(DllPolicy::INTERCEPT)},
         {L"SkyrimSoulsRE.dll", DllHandling(DllPolicy::BLOCK)},
         {L"crashhandler64.dll", DllHandling(DllPolicy::BLOCK)},
@@ -50,35 +58,31 @@ public:
     bool bIsInitialized = false;
 
 public:
-    static DllManager& Get() {
-        if (!s_instance)
-            s_instance = new DllManager();
-        return *s_instance;
+    static DllLoadManager& Get() {
+        static DllLoadManager instance;
+        return instance;
     }
 
     void Initialize();
 
-    bool IsInitialized() const;
+    [[nodiscard]] bool IsInitialized() const;
 
     // True if Dll is allowed, false if it should be blocked.
-    bool HandleDllLoad(const wchar_t* apPath, uint32_t* apFlags, UNICODE_STRING* apFileName, HANDLE* apHandle);
-
+    bool HandleDllLoad(const wchar_t* apPath, uint32_t* apFlags, const UNICODE_STRING* apFileName, HANDLE* apHandle);
     
 };
 
-namespace DllHandlerFunc
-{
-namespace EngineFixes
+namespace DllHandlerFunc::EngineFixes
 {
 namespace Settings
 {
 // Memory manager is the most critical setting for STR compatibility
-static AutoTOML::bSetting memoryManager{ "Patches", "MemoryManager", false };
+static const AutoTOML::bSetting memoryManager{ "Patches", "MemoryManager", false };
         
 // These settings need to be tested, and there may be others I haven't thought of
-static AutoTOML::bSetting formCaching{ "Patches", "FormCaching", false };
-static AutoTOML::bSetting scaleformAllocator{ "Patches", "ScaleformAllocator", false };
-//static AutoTOML::bSetting memoryAccessErrors{ "Fixes", "MemoryAccessErrors", true };
+static const AutoTOML::bSetting formCaching{ "Patches", "FormCaching", false };
+static const AutoTOML::bSetting scaleformAllocator{ "Patches", "ScaleformAllocator", false };
+//static const AutoTOML::bSetting memoryAccessErrors{ "Fixes", "MemoryAccessErrors", true };
 } // namespace Settings
 // Helpers
 
@@ -90,5 +94,4 @@ bool create_safe_config(const std::filesystem::path& path);
 
 // The main function that intercepts the config file and ensures it is safe for STR
 bool PreloadHandler();
-} // namespace EngineFixes
-}
+} // namespace DllHandlerFunc::EngineFixes

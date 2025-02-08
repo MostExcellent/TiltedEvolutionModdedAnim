@@ -1,22 +1,23 @@
-﻿#include "DllManager.h"
+﻿#include "DllLoadManager.h"
 
 #include "loader/PathRerouting.h"
 
+#include <codecvt>
 #include <ranges>
 #include <winternl.h>
 #include <spdlog/spdlog.h>
 
-DllManager* DllManager::s_instance = nullptr;
+DllLoadManager* DllLoadManager::s_instance = nullptr;
 
 namespace EngineFixesHandler = DllHandlerFunc::EngineFixes;
 namespace EngineFixesSettings = DllHandlerFunc::EngineFixes::Settings;
 
 #pragma region InitializeDllManager
-void DllManager::Initialize()
+void DllLoadManager::Initialize()
 {
     // In the future we could register handler functions elsewhere,
     // but for now we'll just do it here.
-    DllHandling& engineFixesPolicy = s_DllPolicies[L"EngineFixes"];
+    DllHandling& engineFixesPolicy = s_DllPolicies[L"EngineFixes.dll"];
     engineFixesPolicy.PreloadHandler = EngineFixesHandler::PreloadHandler;
 
     // Iterate through the map.
@@ -32,43 +33,50 @@ void DllManager::Initialize()
     bIsInitialized = true;
 }
 
-bool DllManager::IsInitialized() const
+bool DllLoadManager::IsInitialized() const
 {
     return bIsInitialized;
 }
 #pragma endregion
 
-bool DllManager::HandleDllLoad(const wchar_t* apPath, uint32_t* apFlags, UNICODE_STRING* apFileName,
+bool DllLoadManager::HandleDllLoad(const wchar_t* apPath, uint32_t* apFlags, const UNICODE_STRING* apFileName,
     HANDLE* apHandle)
 {
     if (!bIsInitialized)
     {
         Initialize();
     }
-    bool bAllowLoad = false;
+    bool bAllowLoad = true;
     std::wstring_view fileName(apFileName->Buffer, apFileName->Length / sizeof(wchar_t));
-    size_t pos = fileName.find_last_of(L'\\');
-    if (pos != std::wstring_view::npos && (pos + 1) != fileName.length())
+    if (size_t pos = fileName.find_last_of(L'\\');
+        pos != std::wstring_view::npos && (pos + 1) != fileName.length())
     {
         // Find the dll in the map, check if it's allowed or intercepted
-        auto dll_handling = s_DllPolicies.find(&fileName[pos + 1]);
-        if (dll_handling != s_DllPolicies.end())
+        if (const auto& dll_handling = s_DllPolicies.find(&fileName[pos + 1]); dll_handling != s_DllPolicies.end())
         {
             if (dll_handling->second.policy == DllPolicy::INTERCEPT)
             {
+                spdlog::info("DLL: {} - Intercepted", pos + 1);
                 bAllowLoad = dll_handling->second.PreloadHandler();
             }
-            else if (dll_handling->second.policy == DllPolicy::ALLOW)
+            else if (dll_handling->second.policy == DllPolicy::BLOCK)
             {
-                bAllowLoad = true;
+                spdlog::info("DLL: {} - Blocked", pos + 1);
+                bAllowLoad = false;
             }
         }
-        else
-        {
-            bAllowLoad = true;
-        }
+        //else
+        //{
+        //    bAllowLoad = true;
+        //}
     }
 
+    // Convert std::wstring_view to std::string
+    // First convert wstring_view to wstring
+    std::wstring fileNameWStr(apFileName->Buffer, apFileName->Length / sizeof(wchar_t));
+    std::string fileNameStr = wstring_utils::wstring_to_string(fileNameWStr);
+
+    spdlog::info("DLL: {} - Allowed: {}", fileNameStr, bAllowLoad);
     return bAllowLoad;
 }
 
@@ -122,7 +130,7 @@ bool EngineFixesHandler::PreloadHandler()
             spdlog::info("Updating Engine Fixes configuration for STR compatibility");
 
             // Create backup if it doesn't exist
-            const auto backup_path = config_path.string() + ".backup";
+            const std::filesystem::path backup_path = config_path.string() + ".backup";
             if (!std::filesystem::exists(backup_path))
             {
                 copy_file(config_path, backup_path);
@@ -150,6 +158,8 @@ bool EngineFixesHandler::PreloadHandler()
 std::filesystem::path EngineFixesHandler::get_config_path()
 {
     // current_path() is game root, correct?
+    // Log current_path to check
+    spdlog::info("Current path: {}", std::filesystem::current_path().string());
     return std::filesystem::current_path() / 
                "Data" / "SKSE" / "Plugins" / "EngineFixes.toml";
 }
