@@ -5,5 +5,5 @@
 
 struct BGSKeyword : TESForm
 {
-    BSString keyword;
+    BSFixedString keyword;
 };

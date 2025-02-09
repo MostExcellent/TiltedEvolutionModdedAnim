@@ -226,6 +226,7 @@ static bool g_enableWeatherWindow{false};
 static bool g_enableCombatWindow{false};
 static bool g_enableCalendarWindow{false};
 static bool g_enableDragonSpawnerWindow{false};
+static bool g_enableSendAnimEventWindow{false};
 
 void DebugService::DrawServerView() noexcept
 {
@@ -328,6 +329,7 @@ void DebugService::OnDraw() noexcept
         ImGui::MenuItem("Forms", nullptr, &g_enableFormsWindow);
         ImGui::MenuItem("Inventory", nullptr, &g_enableInventoryWindow);
         ImGui::MenuItem("Animations", nullptr, &g_enableAnimWindow);
+        ImGui::MenuItem("SendAnimEvent", nullptr, &g_enableSendAnimEventWindow);
         ImGui::MenuItem("Player", nullptr, &g_enablePlayerWindow);
         ImGui::MenuItem("Skills", nullptr, &g_enableSkillsWindow);
         ImGui::MenuItem("Cell", nullptr, &g_enableCellWindow);
@@ -378,6 +380,8 @@ void DebugService::OnDraw() noexcept
         DrawContainerDebugView();
     if (g_enableAnimWindow)
         DrawAnimDebugView();
+    if (g_enableSendAnimEventWindow)
+        DrawSendAnimEventView();
     if (g_enablePlayerWindow)
         DrawPlayerDebugView();
     if (g_enableSkillsWindow)

@@ -1,5 +1,7 @@
+#include "BSAnimationGraphManager.h"
 #include "Forms/TESObjectCELL.h"
 #include "Forms/TESWorldSpace.h"
+#include "Games/Animation/AnimEventListener.h"
 #include "Services/PapyrusService.h"
 #include <Services/PartyService.h>
 
@@ -146,8 +148,10 @@ bool CharacterService::TakeOwnership(const uint32_t acFormId, const uint32_t acS
     // Send an ownership claim request, and have the server broadcast the result.
     // Only then should components be added or removed.
     m_world.emplace_or_replace<LocalComponent>(acEntity, acServerId);
-    m_world.emplace_or_replace<LocalAnimationComponent>(acEntity);
+    LocalAnimationComponent& local_anim_component = m_world.emplace_or_replace<LocalAnimationComponent>(acEntity);
     DeleteRemoteEntityComponents(acEntity);
+    if (!SetupLocalAnimComponent(local_anim_component, pActor))
+        spdlog::warn("Setup local animation component failed!");
 
     RequestOwnershipClaim request;
     request.ServerId = acServerId;
@@ -190,8 +194,8 @@ void CharacterService::OnActorAdded(const ActorAddedEvent& acEvent) noexcept
 
     if (it != std::end(view))
     {
-        Actor* pActor = Cast<Actor>(TESForm::GetById(acEvent.FormId));
-        pActor->GetExtension()->SetRemote(true);
+        Actor* _pActor = Cast<Actor>(TESForm::GetById(acEvent.FormId));
+        _pActor->GetExtension()->SetRemote(true);
 
         entity = *it;
     }
@@ -323,9 +327,10 @@ void CharacterService::OnAssignCharacter(const AssignCharacterResponse& acMessag
         spdlog::info("Received local actor, form id: {:X}", pActor->formID);
 
         m_world.emplace_or_replace<LocalComponent>(cEntity, acMessage.ServerId);
-        m_world.emplace_or_replace<LocalAnimationComponent>(cEntity);
-
+        auto& local_anim_component = m_world.emplace_or_replace<LocalAnimationComponent>(cEntity);
         pActor->GetExtension()->SetRemote(false);
+        if (!SetupLocalAnimComponent(local_anim_component, pActor))
+            spdlog::warn("Setup local animation component failed!");
     }
     else
     {
@@ -473,6 +478,22 @@ void CharacterService::OnCharacterSpawn(const CharacterSpawnRequest& acMessage) 
 
     auto& remoteAnimationComponent = m_world.get<RemoteAnimationComponent>(*entity);
     remoteAnimationComponent.TimePoints.push_back(acMessage.LatestAction);
+
+    // BSAnimationGraphManager* pManager;
+    // if (pActor->animationGraphHolder.GetBSAnimationGraph(&pManager))
+    // {
+    //     for (uint32_t i = 0; i < pManager->animationGraphs.size; i++)
+    //     {
+    //         spdlog::info("Graph found, registering event sink");
+    //         const auto& graph = pManager->animationGraphs.Get(i);
+    //         
+    //         AnimGraphEventSource::RegisterEventSink(graph, std::make_shared_for_overwrite<AnimEventListener>().get());
+    //     }
+    // }
+    // else
+    // {
+    //     spdlog::info("Could not get animation graphs");
+    // }
 }
 
 void CharacterService::OnRemoteSpawnDataReceived(const NotifySpawnData& acMessage) noexcept
@@ -516,6 +537,21 @@ void CharacterService::OnRemoteSpawnDataReceived(const NotifySpawnData& acMessag
         acMessage.NewActorData.IsDead ? pActor->Kill() : pActor->Respawn();
 
     spdlog::info("Applied remote spawn data, actor form id: {:X}", pActor->formID);
+    
+    // BSAnimationGraphManager* pManager;
+    // if (pActor->animationGraphHolder.GetBSAnimationGraph(&pManager))
+    // {
+    //     for (uint32_t i = 0; i < pManager->animationGraphs.size; i++)
+    //     {
+    //         spdlog::info("Graph found, registering event sink");
+    //         const auto& graph = pManager->animationGraphs.Get(i);
+    //         AnimGraphEventSource::RegisterEventSink(graph, std::make_shared_for_overwrite<AnimEventListener>().get());
+    //     }
+    // }
+    // else
+    // {
+    //     spdlog::info("Could not get animation graphs");
+    // }
 }
 
 void CharacterService::OnReferencesMoveRequest(const ServerReferencesMoveRequest& acMessage) const noexcept
@@ -1660,3 +1696,39 @@ void CharacterService::ApplyCachedWeaponDraws(const UpdateEvent& acUpdateEvent) 
     for (uint32_t id : toRemove)
         m_weaponDrawUpdates.erase(id);
 }
+
+//#pragma optimize("", off)
+bool CharacterService::SetupLocalAnimComponent(LocalAnimationComponent& in_local_anim_component, Actor* in_actor)
+{
+    if (!in_actor)
+        return false;
+    BSAnimationGraphManager* pManager = nullptr;
+    if (in_actor->animationGraphHolder.GetBSAnimationGraph(&pManager))
+    {
+        BSScopedLock<BSRecursiveLock> _{pManager->lock};
+        if (pManager->animationGraphIndex < pManager->animationGraphs.size)
+        {
+            BShkbAnimationGraph* pGraph = nullptr;
+            if (in_actor->formID == 0x14)
+                pGraph = pManager->animationGraphs.Get(0);
+            else
+                pGraph = pManager->animationGraphs.Get(pManager->animationGraphIndex);
+
+            if (pGraph == nullptr)
+            {
+                spdlog::error("pGraph is null even though it should not be for formID:{}!", in_actor->formID);
+            }
+            EventDispatcher<BSAnimationGraphEvent>& graph_event_dispatcher = pGraph->eventDispatcher;
+            auto* actor_graph_event_sink = new AnimEventListener();
+            graph_event_dispatcher.RegisterSink(actor_graph_event_sink);
+            in_local_anim_component.LocalAnimEventListeners.Set(pGraph, actor_graph_event_sink);
+            spdlog::info("Sanity check: pGraph holder is formID:{}", pGraph->holder->formID);
+            return true;
+        }
+        
+        return false;
+    }
+    spdlog::warn("Local actor animation graph manager holder is null or graphs array is empty!");
+    return false;
+}
+//#pragma optimize("", on)

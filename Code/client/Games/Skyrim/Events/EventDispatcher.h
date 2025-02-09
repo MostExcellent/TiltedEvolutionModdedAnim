@@ -22,6 +22,7 @@ template <class T> struct EventDispatcher
 
     uint8_t pad0[0x58];
 };
+static_assert(sizeof(EventDispatcher<void*>) == 0x58);
 
 struct UnknownEvent
 {

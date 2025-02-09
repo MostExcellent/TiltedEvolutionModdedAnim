@@ -108,6 +108,8 @@ private:
     void RunExperienceUpdates() noexcept;
     void ApplyCachedWeaponDraws(const UpdateEvent& acUpdateEvent) noexcept;
 
+    static bool SetupLocalAnimComponent(LocalAnimationComponent& in_local_anim_component, Actor* in_actor);
+
     World& m_world;
     entt::dispatcher& m_dispatcher;
     TransportService& m_transport;

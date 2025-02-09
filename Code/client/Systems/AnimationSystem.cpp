@@ -1,3 +1,5 @@
+#include "Forms/TESIdleForm.h"
+
 #include <TiltedOnlinePCH.h>
 
 #include <Systems/AnimationSystem.h>
@@ -46,7 +48,7 @@ void AnimationSystem::Update(World& aWorld, Actor* apActor, RemoteAnimationCompo
         // Play the animation
         TESActionData actionData(first.Type & 0x3, apActor, pAction, pTarget);
         actionData.eventName = BSFixedString(first.EventName.c_str());
-        actionData.idleForm = Cast<TESIdleForm>(TESForm::GetById(first.IdleId));
+        actionData.idleForm = first.IdleId != 0 ? Cast<TESIdleForm>(TESForm::GetById(first.IdleId)) : nullptr;
         actionData.someFlag = ((first.Type & 0x4) != 0) ? 1 : 0;
 
         const auto result = ActorMediator::Get()->ForceAction(&actionData);
@@ -107,11 +109,6 @@ void AnimationSystem::Serialize(World& aWorld, ClientReferencesMoveRequest& aMov
     if (pActor->currentProcess && pActor->currentProcess->middleProcess)
     {
         movement.Direction = pActor->currentProcess->middleProcess->direction;
-    }
-
-    for (auto& entry : animationComponent.Actions)
-    {
-        update.ActionEvents.push_back(entry);
     }
 
     auto latestAction = animationComponent.GetLatestAction();

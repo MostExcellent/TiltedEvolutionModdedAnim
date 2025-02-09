@@ -42,7 +42,7 @@ std::mutex mutex_lock;
 // How long we failList a behavior hash that can't be translated.
 // See explanation in BehaviorVar::Patch
 using namespace std::literals;
-const std::chrono::steady_clock::duration FAILLIST_DURATION(10min);
+constexpr std::chrono::steady_clock::duration FAILLIST_DURATION(10min);
 
 BehaviorVar* BehaviorVar::single = nullptr;
 BehaviorVar* BehaviorVar::Get()
@@ -67,8 +67,8 @@ namespace
 TiltedPhoques::String ToLowerCase(const TiltedPhoques::String& acStr)
 {
     TiltedPhoques::String lowerCaseStr(acStr);
-    std::transform(acStr.begin(), acStr.end(), lowerCaseStr.begin(), 
-                   [](unsigned char c) { return std::tolower(c); });
+    std::ranges::transform(acStr, lowerCaseStr.begin(), 
+                           [](unsigned char c) { return std::tolower(c); });
     return lowerCaseStr;
 }
 
