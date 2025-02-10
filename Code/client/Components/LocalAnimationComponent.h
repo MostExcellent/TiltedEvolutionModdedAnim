@@ -54,9 +54,9 @@ struct GraphListenerPair
 struct LocalAnimationComponent
 {
     LocalAnimationComponent() = default;
-    LocalAnimationComponent(LocalAnimationComponent&&) = default;
+    LocalAnimationComponent(LocalAnimationComponent&&) noexcept = default;
 
-    LocalAnimationComponent& operator=(LocalAnimationComponent&&) = default;
+    LocalAnimationComponent& operator=(LocalAnimationComponent&&) noexcept = default;
 
     ~LocalAnimationComponent() = default;
     
