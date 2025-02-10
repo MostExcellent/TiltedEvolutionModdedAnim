@@ -478,22 +478,6 @@ void CharacterService::OnCharacterSpawn(const CharacterSpawnRequest& acMessage) 
 
     auto& remoteAnimationComponent = m_world.get<RemoteAnimationComponent>(*entity);
     remoteAnimationComponent.TimePoints.push_back(acMessage.LatestAction);
-
-    // BSAnimationGraphManager* pManager;
-    // if (pActor->animationGraphHolder.GetBSAnimationGraph(&pManager))
-    // {
-    //     for (uint32_t i = 0; i < pManager->animationGraphs.size; i++)
-    //     {
-    //         spdlog::info("Graph found, registering event sink");
-    //         const auto& graph = pManager->animationGraphs.Get(i);
-    //         
-    //         AnimGraphEventSource::RegisterEventSink(graph, std::make_shared_for_overwrite<AnimEventListener>().get());
-    //     }
-    // }
-    // else
-    // {
-    //     spdlog::info("Could not get animation graphs");
-    // }
 }
 
 void CharacterService::OnRemoteSpawnDataReceived(const NotifySpawnData& acMessage) noexcept
@@ -537,21 +521,6 @@ void CharacterService::OnRemoteSpawnDataReceived(const NotifySpawnData& acMessag
         acMessage.NewActorData.IsDead ? pActor->Kill() : pActor->Respawn();
 
     spdlog::info("Applied remote spawn data, actor form id: {:X}", pActor->formID);
-    
-    // BSAnimationGraphManager* pManager;
-    // if (pActor->animationGraphHolder.GetBSAnimationGraph(&pManager))
-    // {
-    //     for (uint32_t i = 0; i < pManager->animationGraphs.size; i++)
-    //     {
-    //         spdlog::info("Graph found, registering event sink");
-    //         const auto& graph = pManager->animationGraphs.Get(i);
-    //         AnimGraphEventSource::RegisterEventSink(graph, std::make_shared_for_overwrite<AnimEventListener>().get());
-    //     }
-    // }
-    // else
-    // {
-    //     spdlog::info("Could not get animation graphs");
-    // }
 }
 
 void CharacterService::OnReferencesMoveRequest(const ServerReferencesMoveRequest& acMessage) const noexcept
@@ -1697,7 +1666,6 @@ void CharacterService::ApplyCachedWeaponDraws(const UpdateEvent& acUpdateEvent) 
         m_weaponDrawUpdates.erase(id);
 }
 
-//#pragma optimize("", off)
 bool CharacterService::SetupLocalAnimComponent(LocalAnimationComponent& in_local_anim_component, Actor* in_actor)
 {
     if (!in_actor)
@@ -1705,7 +1673,7 @@ bool CharacterService::SetupLocalAnimComponent(LocalAnimationComponent& in_local
     BSAnimationGraphManager* pManager = nullptr;
     if (in_actor->animationGraphHolder.GetBSAnimationGraph(&pManager))
     {
-        BSScopedLock<BSRecursiveLock> _{pManager->lock};
+        BSScopedLock _{pManager->lock};
         if (pManager->animationGraphIndex < pManager->animationGraphs.size)
         {
             BShkbAnimationGraph* pGraph = nullptr;
@@ -1722,7 +1690,6 @@ bool CharacterService::SetupLocalAnimComponent(LocalAnimationComponent& in_local
             auto* actor_graph_event_sink = new AnimEventListener();
             graph_event_dispatcher.RegisterSink(actor_graph_event_sink);
             in_local_anim_component.LocalAnimEventListeners.Set(pGraph, actor_graph_event_sink);
-            spdlog::info("Sanity check: pGraph holder is formID:{}", pGraph->holder->formID);
             return true;
         }
         
@@ -1731,4 +1698,3 @@ bool CharacterService::SetupLocalAnimComponent(LocalAnimationComponent& in_local
     spdlog::warn("Local actor animation graph manager holder is null or graphs array is empty!");
     return false;
 }
-//#pragma optimize("", on)

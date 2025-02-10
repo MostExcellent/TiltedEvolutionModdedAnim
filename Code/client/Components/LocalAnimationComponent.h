@@ -12,14 +12,42 @@
 struct GraphListenerPair
 {
     GraphListenerPair() = default;
-    // GraphListenerPair(BShkbAnimationGraph* in_graph, AnimEventListener* in_listener)
-    //     : graph(in_graph), listener(in_listener) {}
+
+    // Delete copy operations
+    GraphListenerPair(const GraphListenerPair&) = delete;
+    GraphListenerPair& operator=(const GraphListenerPair&) = delete;
+
+    // Define move operations
+    GraphListenerPair(GraphListenerPair&& other) noexcept
+        : graph(other.graph)
+        , listener(std::move(other.listener))
+    {
+        other.graph = nullptr;
+    }
+
+    GraphListenerPair& operator=(GraphListenerPair&& other) noexcept
+    {
+        if (this != &other)
+        {
+            // Clean up existing registration
+            if (listener && graph)
+            {
+                graph->eventDispatcher.UnRegisterSink(listener.get());
+            }
+            
+            graph = other.graph;
+            listener = std::move(other.listener);
+            other.graph = nullptr;
+        }
+        return *this;
+    }
+
     ~GraphListenerPair();
 
     bool Set(BShkbAnimationGraph* in_graph, AnimEventListener* in_listener);
 
     BShkbAnimationGraph* graph = nullptr;
-    AnimEventListener* listener = nullptr;
+    UniquePtr<AnimEventListener> listener = nullptr;
     
 };
 

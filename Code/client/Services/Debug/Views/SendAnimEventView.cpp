@@ -11,13 +11,11 @@ void DebugService::DrawSendAnimEventView()
     ImGui::Begin("Send debug anim event");
     // input formID, then lookup button
     ImGui::InputScalar("Form ID", ImGuiDataType_U32, &fetchFormId, nullptr, nullptr, "%08X", ImGuiInputTextFlags_CharsHexadecimal);
-    if (ImGui::Button("Lookup"))
+    if (ImGui::Button("Lookup") && fetchFormId)
     {
-        if (fetchFormId)
-        {
-            if (auto* pFetchForm = TESForm::GetById(fetchFormId))
-                pActor = Cast<Actor>(pFetchForm);
-        }
+        if (auto* pFetchForm = TESForm::GetById(fetchFormId))
+            pActor = Cast<Actor>(pFetchForm);
+
     }
 
     if (!pActor)

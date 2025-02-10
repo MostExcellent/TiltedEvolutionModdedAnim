@@ -2,17 +2,9 @@
 
 GraphListenerPair::~GraphListenerPair()
 {
-    if (listener != nullptr)
+    if (listener != nullptr && graph != nullptr)
     {
-        if (graph != nullptr)
-        {
-            spdlog::info("UnRegistering listener on graph of actor {}", graph->holder->formID);
-            graph->eventDispatcher.UnRegisterSink(listener);
-        }
-        else
-        {
-            delete listener;
-        }
+        graph->eventDispatcher.UnRegisterSink(listener.get());
     }
 }
 
@@ -21,13 +13,8 @@ bool GraphListenerPair::Set(BShkbAnimationGraph* in_graph, AnimEventListener* in
     if (in_graph != nullptr && in_listener != nullptr)
     {
         graph = in_graph;
-        listener = in_listener;
+        listener = TiltedPhoques::MakeUnique<AnimEventListener>(in_listener);
         return true;
     }
     return false;
 }
-
-// LocalAnimationComponent::~LocalAnimationComponent()
-// {
-//         LocalAnimEventListeners.clear();
-// }
