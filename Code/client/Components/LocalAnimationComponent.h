@@ -32,7 +32,7 @@ struct GraphListenerPair
             // Clean up existing registration
             if (listener && graph)
             {
-                graph->eventDispatcher.UnRegisterSink(listener.get());
+                graph->eventDispatcher.UnRegisterSink(listener);
             }
             
             graph = other.graph;
@@ -47,12 +47,17 @@ struct GraphListenerPair
     bool Set(BShkbAnimationGraph* in_graph, AnimEventListener* in_listener);
 
     BShkbAnimationGraph* graph = nullptr;
-    UniquePtr<AnimEventListener> listener = nullptr;
+    AnimEventListener* listener = nullptr;
     
 };
 
 struct LocalAnimationComponent
 {
+    LocalAnimationComponent() = default;
+    LocalAnimationComponent(LocalAnimationComponent&&) = default;
+
+    LocalAnimationComponent& operator=(LocalAnimationComponent&&) = default;
+
     ~LocalAnimationComponent() = default;
     
     Vector<ActionEvent> Actions;

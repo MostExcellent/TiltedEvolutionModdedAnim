@@ -2,9 +2,11 @@
 
 GraphListenerPair::~GraphListenerPair()
 {
-    if (listener != nullptr && graph != nullptr)
+    if (listener != nullptr)
     {
-        graph->eventDispatcher.UnRegisterSink(listener.get());
+        if (graph != nullptr)
+            graph->eventDispatcher.UnRegisterSink(listener);
+        delete listener;
     }
 }
 
@@ -13,7 +15,7 @@ bool GraphListenerPair::Set(BShkbAnimationGraph* in_graph, AnimEventListener* in
     if (in_graph != nullptr && in_listener != nullptr)
     {
         graph = in_graph;
-        listener = TiltedPhoques::MakeUnique<AnimEventListener>(in_listener);
+        listener = in_listener;
         return true;
     }
     return false;
